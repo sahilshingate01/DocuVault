@@ -7,6 +7,7 @@ from app.models.user import User
 from app.models.workspace import Workspace
 from app.models.document import Document
 from app.models.document_version import DocumentVersion
+from app.models.signature import DigitalSignature
 
 __all__ = [
     "TimeStampedModel",
@@ -17,4 +18,5 @@ __all__ = [
     "Workspace",
     "Document",
     "DocumentVersion",
+    "DigitalSignature",
 ]
