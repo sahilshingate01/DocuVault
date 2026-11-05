@@ -8,6 +8,7 @@ from app.models.workspace import Workspace
 from app.models.document import Document
 from app.models.document_version import DocumentVersion
 from app.models.signature import DigitalSignature
+from app.models.audit_log import AuditLog
 
 __all__ = [
     "TimeStampedModel",
@@ -19,4 +20,5 @@ __all__ = [
     "Document",
     "DocumentVersion",
     "DigitalSignature",
+    "AuditLog",
 ]
