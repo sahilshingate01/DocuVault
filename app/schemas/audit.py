@@ -1,10 +1,11 @@
 """Audit schemas."""
 from datetime import datetime
 from typing import Optional, Dict, Any, List
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class AuditLogResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: str
     sequence_number: int
     timestamp: datetime
@@ -19,9 +20,6 @@ class AuditLogResponse(BaseModel):
     status: str
     ip_address: Optional[str]
     details_json: str
-
-    class Config:
-        from_attributes = True
 
 
 class AuditIntegrityResponse(BaseModel):

@@ -82,6 +82,7 @@ class AuditService:
         log_entry = AuditLog(
             sequence_number=sequence_number,
             timestamp=now,
+            timestamp_iso=timestamp_iso,
             previous_hash=previous_hash,
             entry_hash=entry_hash,
             user_id=actor.id if actor else None,
@@ -141,9 +142,10 @@ class AuditService:
                 }
 
             # Check 3: Entry content integrity (recomputing SHA-256)
+            ts_str = entry.timestamp_iso if getattr(entry, "timestamp_iso", None) else entry.timestamp.isoformat()
             recalculated_hash = cls.compute_entry_hash(
                 sequence_number=entry.sequence_number,
-                timestamp_iso=entry.timestamp.isoformat(),
+                timestamp_iso=ts_str,
                 previous_hash=entry.previous_hash,
                 user_id=entry.user_id,
                 action=entry.action,

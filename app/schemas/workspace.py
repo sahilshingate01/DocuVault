@@ -1,7 +1,7 @@
 """Workspace schemas."""
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class WorkspaceBase(BaseModel):
@@ -17,12 +17,10 @@ class WorkspaceCreate(WorkspaceBase):
 
 
 class WorkspaceResponse(WorkspaceBase):
+    model_config = ConfigDict(from_attributes=True)
     id: str
     organization_id: str
     department_id: Optional[str] = None
     is_closed: bool
     created_at: datetime
     document_count: Optional[int] = 0
-
-    class Config:
-        from_attributes = True

@@ -1,10 +1,11 @@
 """Document and Version schemas."""
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class SignatureBrief(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: str
     signer_title: Optional[str]
     signed_at: datetime
@@ -12,11 +13,9 @@ class SignatureBrief(BaseModel):
     validity_status: str
     digest_signed: str
 
-    class Config:
-        from_attributes = True
-
 
 class DocumentVersionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: str
     version_number: int
     original_filename: str
@@ -28,9 +27,6 @@ class DocumentVersionResponse(BaseModel):
     approved_at: Optional[datetime] = None
     created_at: datetime
     signatures: List[SignatureBrief] = []
-
-    class Config:
-        from_attributes = True
 
 
 class DocumentBase(BaseModel):
@@ -46,14 +42,12 @@ class DocumentCreate(DocumentBase):
 
 
 class DocumentResponse(DocumentBase):
+    model_config = ConfigDict(from_attributes=True)
     id: str
     workspace_id: str
     status: str
     created_at: datetime
     current_version: Optional[DocumentVersionResponse] = None
-
-    class Config:
-        from_attributes = True
 
 
 class DocumentDetail(DocumentResponse):

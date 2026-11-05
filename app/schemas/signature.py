@@ -1,7 +1,7 @@
 """Signature schemas."""
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class SignDocumentRequest(BaseModel):
@@ -10,6 +10,7 @@ class SignDocumentRequest(BaseModel):
 
 
 class SignatureResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: str
     signature_hex: str
     public_key_pem: str
@@ -18,9 +19,6 @@ class SignatureResponse(BaseModel):
     signed_at: datetime
     signer_title: Optional[str]
     validity_status: str
-
-    class Config:
-        from_attributes = True
 
 
 class SignatureVerificationResponse(BaseModel):

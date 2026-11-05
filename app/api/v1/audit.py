@@ -97,10 +97,11 @@ def recalculate_ledger(
     logs = db.query(AuditLog).order_by(AuditLog.sequence_number.asc()).all()
     prev_hash = "0" * 64
     for log in logs:
+        ts_str = log.timestamp_iso if getattr(log, "timestamp_iso", None) else log.timestamp.isoformat()
         log.previous_hash = prev_hash
         log.entry_hash = AuditService.compute_entry_hash(
             sequence_number=log.sequence_number,
-            timestamp_iso=log.timestamp.isoformat(),
+            timestamp_iso=ts_str,
             previous_hash=prev_hash,
             user_id=log.user_id,
             action=log.action,

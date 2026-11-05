@@ -1,10 +1,11 @@
 """User Schemas."""
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 
 
 class PositionBrief(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: str
     title: str
     code: str
@@ -14,27 +15,20 @@ class PositionBrief(BaseModel):
     can_export: bool
     allowed_actions: List[str]
 
-    class Config:
-        from_attributes = True
-
 
 class DepartmentBrief(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: str
     name: str
     code: str
 
-    class Config:
-        from_attributes = True
-
 
 class OrganizationBrief(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: str
     name: str
     slug: str
     jurisdiction: Optional[str] = None
-
-    class Config:
-        from_attributes = True
 
 
 class UserBase(BaseModel):
@@ -54,6 +48,7 @@ class UserCreate(UserBase):
 
 
 class UserResponse(UserBase):
+    model_config = ConfigDict(from_attributes=True)
     id: str
     organization_id: str
     department_id: Optional[str] = None
@@ -64,9 +59,6 @@ class UserResponse(UserBase):
     organization: Optional[OrganizationBrief] = None
     department: Optional[DepartmentBrief] = None
     position: Optional[PositionBrief] = None
-
-    class Config:
-        from_attributes = True
 
 
 class UserLoginResponse(BaseModel):

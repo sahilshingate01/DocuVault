@@ -12,6 +12,7 @@ class AuditLog(Base, TimeStampedModel):
     sequence_number = Column(Integer, unique=True, nullable=False, index=True)
     
     timestamp = Column(DateTime(timezone=True), default=get_utc_now, nullable=False, index=True)
+    timestamp_iso = Column(String(50), nullable=False)
 
     # Cryptographic Hash Chain: SHA-256(previous_hash + payload)
     previous_hash = Column(String(64), nullable=False)
