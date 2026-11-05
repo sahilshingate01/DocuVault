@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocuVault - Secure Document Management System</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Top Navigation Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">
+                <span class="logo-shield">🛡️</span>
+                <span class="logo-text">Docu<span class="highlight">Vault</span></span>
+                <span class="badge badge-digilocker">DigiLocker Grade</span>
+            </div>
+        </div>
+        
+        <!-- Live Persona Switcher -->
+        <div class="persona-container">
+            <label for="personaSelect" class="persona-label">Active Persona:</label>
+            <select id="personaSelect" class="persona-select">
+                <option value="sp">👮‍♂️ SP Vikram Sharma (Superintendent of Police | TOP SECRET)</option>
+                <option value="si">👮 Sub-Inspector Arjun Das (Investigator | CONFIDENTIAL)</option>
+                <option value="judge">⚖️ Hon. Judge Sneha Kulkarni (District Judge | TOP SECRET)</option>
+                <option value="clerk">📜 Manoj Verma (Court Record Clerk | RESTRICTED)</option>
+                <option value="ceo">💼 Siddharth Singhania (CEO - Apex Corp | TOP SECRET)</option>
+                <option value="analyst">📊 Riya Sen (Junior Analyst | UNCLASSIFIED)</option>
+            </select>
+        </div>
+
+        <div class="header-right">
+            <div id="userBadge" class="user-badge">
+                <span id="activeUserName" class="user-name">SP Vikram Sharma</span>
+                <span id="activeUserClearance" class="badge badge-top-secret">TOP SECRET</span>
+            </div>
+            <a href="/docs" target="_blank" class="btn btn-secondary btn-sm">Interactive API Docs</a>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <nav class="nav-menu">
+                <button class="nav-item active" data-tab="workspaces">
+                    <span class="icon">📁</span> Workspaces & Cases
+                </button>
+                <button class="nav-item" data-tab="documents">
+                    <span class="icon">📄</span> Document Vault
+                </button>
+                <button class="nav-item" data-tab="signatures">
+                    <span class="icon">✍️</span> Digital Signatures
+                </button>
+                <button class="nav-item" data-tab="audit">
+                    <span class="icon">🔗</span> Tamper-Evident Ledger
+                </button>
+                <button class="nav-item" data-tab="search">
+                    <span class="icon">🔍</span> Clearance Search
+                </button>
+            </nav>
+
+            <div class="sidebar-status-card">
+                <div class="status-title">Vault Cryptography</div>
+                <div class="status-metric"><span>Fingerprint:</span> <strong>SHA-256</strong></div>
+                <div class="status-metric"><span>Signatures:</span> <strong>RSA-PSS-2048</strong></div>
+                <div class="status-metric"><span>Ledger:</span> <strong>Hash-Chained</strong></div>
+                <div id="ledgerHealthBadge" class="status-badge-intact">● Chain Pristine</div>
+            </div>
+        </aside>
+
+        <!-- Content Area -->
+        <section class="content-area">
+            <!-- Alert Banner -->
+            <div id="alertBanner" class="alert-banner hidden"></div>
+
+            <!-- Tab 1: Workspaces -->
+            <div id="tab-workspaces" class="tab-pane active">
+                <div class="pane-header">
+                    <div>
+                        <h2>Secure Workspaces</h2>
+                        <p class="subtitle">Enforcing department boundaries and mandatory case clearance</p>
+                    </div>
+                    <button id="btnNewWorkspace" class="btn btn-primary">+ New Case / Workspace</button>
+                </div>
+                <div id="workspacesGrid" class="grid-cards">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Tab 2: Document Vault -->
+            <div id="tab-documents" class="tab-pane">
+                <div class="pane-header">
+                    <div>
+                        <h2>Document Vault</h2>
+                        <p class="subtitle">SHA-256 fingerprinted records with full version provenance</p>
+                    </div>
+                    <button id="btnUploadDoc" class="btn btn-primary">⬆️ Secure Upload</button>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Doc #</th>
+                                <th>Title</th>
+                                <th>Classification</th>
+                                <th>Status</th>
+                                <th>Current SHA-256 Fingerprint</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="documentsTableBody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab 3: Digital Signatures -->
+            <div id="tab-signatures" class="tab-pane">
+                <div class="pane-header">
+                    <div>
+                        <h2>Digital Signatures & Approvals</h2>
+                        <p class="subtitle">Cryptographic proof of non-repudiation using RSA-PSS</p>
+                    </div>
+                </div>
+
+                <div class="signature-instruction-card">
+                    <h3>Legal Authorization Rule</h3>
+                    <p>Only authorized positions (e.g. <strong>Superintendent of Police</strong>, <strong>District Judge</strong>, <strong>CEO</strong>) can digitally sign document versions once they have been approved.</p>
+                </div>
+
+                <div id="signaturesContainer" class="signatures-list">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Tab 4: Tamper-Evident Ledger -->
+            <div id="tab-audit" class="tab-pane">
+                <div class="pane-header">
+                    <div>
+                        <h2>Cryptographic Audit Ledger</h2>
+                        <p class="subtitle">Hash-chained immutable event trail with live mathematical verification</p>
+                    </div>
+                    <div class="header-actions">
+                        <button id="btnVerifyLedger" class="btn btn-success">✓ Verify Ledger Integrity</button>
+                        <button id="btnSimulateTamper" class="btn btn-warning">⚠️ Simulate Tampering</button>
+                        <button id="btnRestoreLedger" class="btn btn-secondary">↺ Restore Ledger</button>
+                    </div>
+                </div>
+
+                <div id="verificationResultCard" class="verification-card hidden"></div>
+
+                <div class="table-container">
+                    <table class="data-table monospace-table">
+                        <thead>
+                            <tr>
+                                <th>Block #</th>
+                                <th>Timestamp</th>
+                                <th>Actor</th>
+                                <th>Action</th>
+                                <th>Previous Hash</th>
+                                <th>Entry Hash (SHA-256)</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="auditTableBody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab 5: Search -->
+            <div id="tab-search" class="tab-pane">
+                <div class="pane-header">
+                    <div>
+                        <h2>Clearance-Aware Document Search</h2>
+                        <p class="subtitle">Fast indexed lookup with automatic security redaction</p>
+                    </div>
+                </div>
+
+                <div class="search-bar-row">
+                    <input type="text" id="searchInput" class="form-input search-input" placeholder="Search by case title, tags (e.g. forensics), or exact SHA-256 hash...">
+                    <button id="btnSearch" class="btn btn-primary">Search Vault</button>
+                </div>
+
+                <div id="searchResultsCount" class="search-meta"></div>
+                <div id="searchResultsGrid" class="grid-cards">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Upload Document Modal -->
+    <div id="uploadModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Secure Document Upload</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="uploadForm">
+                <div class="form-group">
+                    <label>Document Title</label>
+                    <input type="text" name="title" id="upTitle" required class="form-input" placeholder="e.g., Forensic Ballistics Analysis">
+                </div>
+                <div class="form-group">
+                    <label>Document Number / Reference</label>
+                    <input type="text" name="document_number" id="upDocNumber" required class="form-input" placeholder="e.g., FIR-402-BALLISTICS-01">
+                </div>
+                <div class="form-group">
+                    <label>Target Workspace / Case</label>
+                    <select name="workspace_id" id="upWorkspaceSelect" required class="form-select"></select>
+                </div>
+                <div class="form-group">
+                    <label>Security Classification</label>
+                    <select name="classification" id="upClassification" class="form-select">
+                        <option value="UNCLASSIFIED">UNCLASSIFIED (Public)</option>
+                        <option value="RESTRICTED">RESTRICTED (Official Use)</option>
+                        <option value="CONFIDENTIAL">CONFIDENTIAL (Privileged)</option>
+                        <option value="SECRET">SECRET (High Sensitivity)</option>
+                        <option value="TOP_SECRET">TOP_SECRET (Highest State / Judicial Clearance)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Select File</label>
+                    <input type="file" name="file" id="upFile" required class="form-file">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Fingerprint & Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Workspace Modal -->
+    <div id="workspaceModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New Workspace / Case</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="workspaceForm">
+                <div class="form-group">
+                    <label>Workspace / Case Name</label>
+                    <input type="text" id="wsName" required class="form-input" placeholder="e.g., State vs. Malgudi Case Diary">
+                </div>
+                <div class="form-group">
+                    <label>Unique Case Code</label>
+                    <input type="text" id="wsCode" required class="form-input" placeholder="e.g., CASE-2026-CR-0402">
+                </div>
+                <div class="form-group">
+                    <label>Classification Level</label>
+                    <select id="wsClassification" class="form-select">
+                        <option value="UNCLASSIFIED">UNCLASSIFIED</option>
+                        <option value="RESTRICTED">RESTRICTED</option>
+                        <option value="CONFIDENTIAL">CONFIDENTIAL</option>
+                        <option value="SECRET">SECRET</option>
+                        <option value="TOP_SECRET">TOP_SECRET</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Workspace</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
