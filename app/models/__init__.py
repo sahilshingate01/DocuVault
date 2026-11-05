@@ -4,6 +4,9 @@ from app.models.organization import Organization
 from app.models.department import Department
 from app.models.position import Position
 from app.models.user import User
+from app.models.workspace import Workspace
+from app.models.document import Document
+from app.models.document_version import DocumentVersion
 
 __all__ = [
     "TimeStampedModel",
@@ -11,4 +14,7 @@ __all__ = [
     "Department",
     "Position",
     "User",
+    "Workspace",
+    "Document",
+    "DocumentVersion",
 ]
