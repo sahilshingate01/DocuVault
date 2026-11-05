@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  docuvault:
+    build: .
+    container_name: docuvault_app
+    ports:
+      - "8000:8000"
+    environment:
+      - PROJECT_NAME=DocuVault
+      - SECRET_KEY=docuvault-super-secret-key-production-ready-2026-sha256
+      - DATABASE_URL=sqlite:///./docuvault.db
+      - STORAGE_DIR=/app/vault_storage
+    volumes:
+      - docuvault_data:/app/vault_storage
+      - docuvault_db:/app
+    restart: unless-stopped
+
+volumes:
+  docuvault_data:
+  docuvault_db:
