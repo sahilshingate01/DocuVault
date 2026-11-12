@@ -16,6 +16,7 @@ from app.api.v1.signatures import router as signatures_router
 from app.api.v1.audit import router as audit_router
 from app.api.v1.search import router as search_router
 from app.api.v1.custody import router as custody_router
+from app.api.v1.certificates import router as certificates_router
 
 # Ensure all database tables exist
 Base.metadata.create_all(bind=engine)
@@ -45,6 +46,7 @@ app.include_router(signatures_router, prefix=settings.API_V1_STR)
 app.include_router(audit_router, prefix=settings.API_V1_STR)
 app.include_router(search_router, prefix=settings.API_V1_STR)
 app.include_router(custody_router, prefix=settings.API_V1_STR)
+app.include_router(certificates_router, prefix=settings.API_V1_STR)
 
 # Mount Static Client Files
 static_dir = Path(__file__).resolve().parent.parent / "static"
