@@ -15,6 +15,7 @@ from app.api.v1.documents import router as documents_router
 from app.api.v1.signatures import router as signatures_router
 from app.api.v1.audit import router as audit_router
 from app.api.v1.search import router as search_router
+from app.api.v1.custody import router as custody_router
 
 # Ensure all database tables exist
 Base.metadata.create_all(bind=engine)
@@ -43,6 +44,7 @@ app.include_router(documents_router, prefix=settings.API_V1_STR)
 app.include_router(signatures_router, prefix=settings.API_V1_STR)
 app.include_router(audit_router, prefix=settings.API_V1_STR)
 app.include_router(search_router, prefix=settings.API_V1_STR)
+app.include_router(custody_router, prefix=settings.API_V1_STR)
 
 # Mount Static Client Files
 static_dir = Path(__file__).resolve().parent.parent / "static"
@@ -66,3 +68,4 @@ def health_check():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+
