@@ -24,6 +24,11 @@ class Document(Base, TimeStampedModel):
     archival_reason = Column(Text, nullable=True)
     retention_until = Column(DateTime(timezone=True), nullable=True)
 
+    # Soft deletion & Trash Bin
+    is_deleted = Column(Boolean, default=False, nullable=False, index=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    deleted_by_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
     # Searchable tags (JSON list: e.g. ["forensics", "ballistics", "homicide"])
     _tags = Column("tags", Text, default="[]")
 
@@ -32,6 +37,7 @@ class Document(Base, TimeStampedModel):
 
     workspace = relationship("Workspace", back_populates="documents")
     creator = relationship("User", foreign_keys=[created_by_id])
+    deleted_by = relationship("User", foreign_keys=[deleted_by_id])
     versions = relationship("DocumentVersion", back_populates="document", cascade="all, delete-orphan", order_by="DocumentVersion.version_number.desc()")
 
     @property

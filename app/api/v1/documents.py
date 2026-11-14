@@ -36,6 +36,20 @@ def _to_doc_response(doc: Document) -> DocumentResponse:
     return res
 
 
+@router.get("/trash/list", response_model=List[DocumentResponse])
+def list_deleted_documents(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Lists soft-deleted documents residing in the vault trash bin."""
+    query = db.query(Document).filter(
+        Document.is_deleted == True,
+        Document.workspace.has(organization_id=current_user.organization_id)
+    )
+    docs = query.order_by(Document.deleted_at.desc()).all()
+    return [_to_doc_response(d) for d in docs]
+
+
 @router.post("/upload", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
 def upload_document(
     file: UploadFile = File(...),
@@ -679,3 +693,76 @@ def download_latest_document(
         db=db,
         current_user=current_user
     )
+
+
+@router.delete("/{document_id}")
+def delete_document(
+    document_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Soft-deletes a document and moves it to the vault trash bin with audit tracking."""
+    from datetime import datetime, timezone
+
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    AccessControlService.authorize_document(db, current_user, document, ActionType.DELETE.value)
+
+    document.is_deleted = True
+    document.deleted_at = datetime.now(timezone.utc)
+    document.deleted_by_id = current_user.id
+    db.commit()
+
+    AuditService.record(
+        db=db,
+        action=ActionType.DELETE.value,
+        resource_type=ResourceType.DOCUMENT.value,
+        resource_id=document.id,
+        actor=current_user,
+        details={
+            "action": "DOCUMENT_SOFT_DELETED",
+            "document_number": document.document_number,
+            "workspace_id": document.workspace_id
+        }
+    )
+
+    return {"message": f"Document '{document.title}' ({document.document_number}) moved to trash."}
+
+
+@router.post("/{document_id}/restore-deleted", response_model=DocumentResponse)
+def restore_deleted_document(
+    document_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Restores a soft-deleted document from the vault trash bin."""
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    AccessControlService.authorize_document(db, current_user, document, ActionType.WRITE.value)
+
+    if not document.is_deleted:
+        raise HTTPException(status_code=400, detail="Document is not in trash.")
+
+    document.is_deleted = False
+    document.deleted_at = None
+    document.deleted_by_id = None
+    db.commit()
+    db.refresh(document)
+
+    AuditService.record(
+        db=db,
+        action=ActionType.UPDATE.value,
+        resource_type=ResourceType.DOCUMENT.value,
+        resource_id=document.id,
+        actor=current_user,
+        details={
+            "action": "DOCUMENT_RESTORED_FROM_TRASH",
+            "document_number": document.document_number
+        }
+    )
+
+    return _to_doc_response(document)
