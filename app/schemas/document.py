@@ -48,6 +48,11 @@ class DocumentUpdate(BaseModel):
     status: Optional[str] = None
 
 
+class DocumentReclassifyRequest(BaseModel):
+    target_classification: str
+    justification: str
+
+
 class DocumentResponse(DocumentBase):
     model_config = ConfigDict(from_attributes=True)
     id: str

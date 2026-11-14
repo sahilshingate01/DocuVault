@@ -11,7 +11,13 @@ from app.models.user import User
 from app.models.workspace import Workspace
 from app.models.document import Document
 from app.models.document_version import DocumentVersion
-from app.schemas.document import DocumentResponse, DocumentDetail, DocumentVersionResponse, DocumentUpdate
+from app.schemas.document import (
+    DocumentResponse,
+    DocumentDetail,
+    DocumentVersionResponse,
+    DocumentUpdate,
+    DocumentReclassifyRequest,
+)
 from app.api.deps import get_current_user
 from app.services.access_control import AccessControlService
 from app.services.crypto_service import CryptoService
@@ -264,6 +270,60 @@ def update_document_metadata(
         resource_id=document.id,
         actor=current_user,
         details={"updated_fields": list(update_dict.keys()), "document_number": document.document_number}
+    )
+
+    return _to_doc_response(document)
+
+
+@router.post("/{document_id}/reclassify", response_model=DocumentResponse)
+def reclassify_document(
+    document_id: str,
+    data: DocumentReclassifyRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Formally reclassifies a document (upgrade or downgrade security level).
+    Enforces that the user has clearance for both the current and target classifications.
+    Records full justification and provenance in the tamper-evident ledger.
+    """
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    effective_clearance = AccessControlService.get_effective_clearance(current_user)
+
+    # User must have clearance for both current and target
+    if not ClassificationLevel.can_access(effective_clearance, document.classification):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Cannot reclassify: your clearance ({effective_clearance.value}) is insufficient for current level '{document.classification}'."
+        )
+
+    if not ClassificationLevel.can_access(effective_clearance, data.target_classification):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Cannot reclassify: your clearance ({effective_clearance.value}) is insufficient for target level '{data.target_classification}'."
+        )
+
+    previous_classification = document.classification
+    document.classification = data.target_classification.upper()
+    db.commit()
+    db.refresh(document)
+
+    AuditService.record(
+        db=db,
+        action=ActionType.UPDATE.value,
+        resource_type=ResourceType.DOCUMENT.value,
+        resource_id=document.id,
+        actor=current_user,
+        details={
+            "action": "DOCUMENT_RECLASSIFICATION",
+            "previous_classification": previous_classification,
+            "new_classification": document.classification,
+            "justification": data.justification,
+            "document_number": document.document_number
+        }
     )
 
     return _to_doc_response(document)
