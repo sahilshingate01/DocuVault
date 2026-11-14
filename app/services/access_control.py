@@ -281,8 +281,8 @@ class AccessControlService:
                 "evaluated_policies": rules_evaluated
             }
 
-        # 4b. Bell-LaPadula Star-Property (*-Property): Workspace classification containment
-        if resource_type == ResourceType.DOCUMENT.value and resource_id:
+        # 4b. Bell-LaPadula Star-Property (*-Property): Workspace classification containment for new writes
+        if action in [ActionType.WRITE.value] and resource_type == ResourceType.DOCUMENT.value and resource_id:
             doc = db.query(Document).filter(Document.id == resource_id).first()
             if doc and doc.workspace:
                 ws_rank = ClassificationLevel.get_rank(doc.workspace.classification)
