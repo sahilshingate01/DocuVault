@@ -47,6 +47,30 @@ class UserCreate(UserBase):
     position_id: Optional[str] = None
 
 
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    badge_number: Optional[str] = None
+    clearance_level: Optional[str] = None
+    is_active: Optional[bool] = None
+    is_admin: Optional[bool] = None
+    organization_id: Optional[str] = None
+    department_id: Optional[str] = None
+    position_id: Optional[str] = None
+
+
+class UserAssignRequest(BaseModel):
+    organization_id: str
+    department_id: Optional[str] = None
+    position_id: Optional[str] = None
+    clearance_level: Optional[str] = None
+
+
+class UserPermissionsUpdate(BaseModel):
+    clearance_level: Optional[str] = None
+    is_admin: Optional[bool] = None
+    is_active: Optional[bool] = None
+
+
 class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
