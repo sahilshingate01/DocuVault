@@ -15,6 +15,7 @@ from app.api.v1.organizations import router as organizations_router
 from app.api.v1.departments import router as departments_router
 from app.api.v1.positions import router as positions_router
 from app.api.v1.clearance import router as clearance_router
+from app.api.v1.security import router as security_router
 from app.api.v1.workspaces import router as workspaces_router
 from app.api.v1.documents import router as documents_router
 from app.api.v1.signatures import router as signatures_router
@@ -52,6 +53,7 @@ app.include_router(organizations_router, prefix=settings.API_V1_STR)
 app.include_router(departments_router, prefix=settings.API_V1_STR)
 app.include_router(positions_router, prefix=settings.API_V1_STR)
 app.include_router(clearance_router, prefix=settings.API_V1_STR)
+app.include_router(security_router, prefix=settings.API_V1_STR)
 app.include_router(workspaces_router, prefix=settings.API_V1_STR)
 app.include_router(documents_router, prefix=settings.API_V1_STR)
 app.include_router(signatures_router, prefix=settings.API_V1_STR)
