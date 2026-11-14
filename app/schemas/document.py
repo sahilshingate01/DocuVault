@@ -41,6 +41,13 @@ class DocumentCreate(DocumentBase):
     workspace_id: str
 
 
+class DocumentUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    tags: Optional[List[str]] = None
+    status: Optional[str] = None
+
+
 class DocumentResponse(DocumentBase):
     model_config = ConfigDict(from_attributes=True)
     id: str

@@ -11,7 +11,7 @@ from app.models.user import User
 from app.models.workspace import Workspace
 from app.models.document import Document
 from app.models.document_version import DocumentVersion
-from app.schemas.document import DocumentResponse, DocumentDetail, DocumentVersionResponse
+from app.schemas.document import DocumentResponse, DocumentDetail, DocumentVersionResponse, DocumentUpdate
 from app.api.deps import get_current_user
 from app.services.access_control import AccessControlService
 from app.services.crypto_service import CryptoService
@@ -234,6 +234,39 @@ def verify_document_integrity(
             "Integrity check failed. The stored file may have been modified or corrupted."
         )
     }
+
+
+@router.put("/{document_id}", response_model=DocumentResponse)
+def update_document_metadata(
+    document_id: str,
+    data: DocumentUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Updates document metadata such as title, description, and searchable tags."""
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    AccessControlService.authorize_document(db, current_user, document, ActionType.UPDATE.value)
+
+    update_dict = data.model_dump(exclude_unset=True)
+    for key, value in update_dict.items():
+        setattr(document, key, value)
+
+    db.commit()
+    db.refresh(document)
+
+    AuditService.record(
+        db=db,
+        action=ActionType.UPDATE.value,
+        resource_type=ResourceType.DOCUMENT.value,
+        resource_id=document.id,
+        actor=current_user,
+        details={"updated_fields": list(update_dict.keys()), "document_number": document.document_number}
+    )
+
+    return _to_doc_response(document)
 
 
 @router.get("/{document_id}", response_model=DocumentDetail)
