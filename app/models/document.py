@@ -1,7 +1,7 @@
 """Document model: Governed file entity residing in a workspace."""
 import json
 from typing import List
-from sqlalchemy import Column, String, Text, ForeignKey
+from sqlalchemy import Column, String, Text, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 from app.core.constants import ClassificationLevel, DocumentStatus
@@ -18,8 +18,11 @@ class Document(Base, TimeStampedModel):
     # Classification level of the document
     classification = Column(String(50), default=ClassificationLevel.UNCLASSIFIED.value, nullable=False, index=True)
     
-    # Lifecycle status
+    # Lifecycle status & Archival
     status = Column(String(50), default=DocumentStatus.DRAFT.value, nullable=False, index=True)
+    archived_at = Column(DateTime(timezone=True), nullable=True)
+    archival_reason = Column(Text, nullable=True)
+    retention_until = Column(DateTime(timezone=True), nullable=True)
 
     # Searchable tags (JSON list: e.g. ["forensics", "ballistics", "homicide"])
     _tags = Column("tags", Text, default="[]")

@@ -17,6 +17,7 @@ from app.schemas.document import (
     DocumentVersionResponse,
     DocumentUpdate,
     DocumentReclassifyRequest,
+    DocumentArchiveRequest,
 )
 from app.api.deps import get_current_user
 from app.services.access_control import AccessControlService
@@ -469,6 +470,85 @@ def reclassify_document(
             "justification": data.justification,
             "document_number": document.document_number
         }
+    )
+
+    return _to_doc_response(document)
+
+
+@router.post("/{document_id}/archive", response_model=DocumentResponse)
+def archive_document(
+    document_id: str,
+    data: DocumentArchiveRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Formally archives an active document, sealing its lifecycle state and establishing a retention period.
+    """
+    from datetime import datetime, timezone, timedelta
+
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    AccessControlService.authorize_document(db, current_user, document, ActionType.UPDATE.value)
+
+    now = datetime.now(timezone.utc)
+    document.status = DocumentStatus.ARCHIVED.value
+    document.archived_at = now
+    document.archival_reason = data.reason
+    if data.retention_years:
+        document.retention_until = now + timedelta(days=365 * data.retention_years)
+
+    db.commit()
+    db.refresh(document)
+
+    AuditService.record(
+        db=db,
+        action=ActionType.UPDATE.value,
+        resource_type=ResourceType.DOCUMENT.value,
+        resource_id=document.id,
+        actor=current_user,
+        details={
+            "action": "DOCUMENT_ARCHIVED",
+            "document_number": document.document_number,
+            "archival_reason": data.reason,
+            "retention_until": document.retention_until.isoformat() if document.retention_until else None
+        }
+    )
+
+    return _to_doc_response(document)
+
+
+@router.post("/{document_id}/unarchive", response_model=DocumentResponse)
+def unarchive_document(
+    document_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Restores an archived document to active lifecycle status."""
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    AccessControlService.authorize_document(db, current_user, document, ActionType.UPDATE.value)
+
+    if document.status != DocumentStatus.ARCHIVED.value:
+        raise HTTPException(status_code=400, detail="Document is not in ARCHIVED status.")
+
+    document.status = DocumentStatus.APPROVED.value if any(v.is_approved for v in document.versions) else DocumentStatus.DRAFT.value
+    document.archived_at = None
+    document.archival_reason = None
+    db.commit()
+    db.refresh(document)
+
+    AuditService.record(
+        db=db,
+        action=ActionType.UPDATE.value,
+        resource_type=ResourceType.DOCUMENT.value,
+        resource_id=document.id,
+        actor=current_user,
+        details={"action": "DOCUMENT_UNARCHIVED", "document_number": document.document_number, "new_status": document.status}
     )
 
     return _to_doc_response(document)

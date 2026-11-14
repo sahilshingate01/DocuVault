@@ -53,6 +53,11 @@ class DocumentReclassifyRequest(BaseModel):
     justification: str
 
 
+class DocumentArchiveRequest(BaseModel):
+    reason: str
+    retention_years: Optional[int] = 5
+
+
 class DocumentResponse(DocumentBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
