@@ -13,8 +13,25 @@ from app.schemas.security import (
 )
 from app.api.deps import get_current_user
 from app.services.access_control import AccessControlService
+from app.services.security_monitor import SecurityMonitorService
 
 router = APIRouter(prefix="/security", tags=["Security & Authorization Engine"])
+
+
+@router.get("/alerts")
+def get_security_alerts(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Retrieves real-time security anomalies, tamper events, and repeated clearance violations."""
+    org_id = None if current_user.is_admin else current_user.organization_id
+    alerts = SecurityMonitorService.get_security_alerts(db, org_id=org_id)
+    return {
+        "active_alerts_count": len(alerts),
+        "critical_count": sum(1 for a in alerts if a["severity"] == "CRITICAL"),
+        "high_count": sum(1 for a in alerts if a["severity"] == "HIGH"),
+        "alerts": alerts
+    }
 
 
 @router.post("/evaluate", response_model=AccessEvaluationResponse)
