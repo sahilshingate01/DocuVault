@@ -1,6 +1,11 @@
 """Audit Ledger API: Query immutable trail, verify cryptographic chain integrity, and test tamper detection."""
+import io
+import csv
+import json
 from typing import List, Optional
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.constants import ActionType, ResourceType
@@ -20,11 +25,16 @@ def get_audit_logs(
     action: Optional[str] = Query(None, description="Filter by action (e.g. READ, WRITE, SIGN, ACCESS_DENIED)"),
     resource_type: Optional[str] = Query(None, description="Filter by resource (e.g. DOCUMENT, WORKSPACE)"),
     resource_id: Optional[str] = Query(None, description="Filter by specific resource ID"),
+    actor_id: Optional[str] = Query(None, description="Filter by actor ID"),
+    status_filter: Optional[str] = Query(None, description="Filter by status (e.g. SUCCESS, DENIED, ALERT)"),
+    start_date: Optional[datetime] = Query(None, description="Filter logs starting from timestamp"),
+    end_date: Optional[datetime] = Query(None, description="Filter logs ending at timestamp"),
     limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Retrieves the chronological audit ledger."""
+    """Retrieves the chronological audit ledger with multi-parameter cryptographic filtering."""
     query = db.query(AuditLog)
     if action:
         query = query.filter(AuditLog.action == action)
@@ -32,6 +42,14 @@ def get_audit_logs(
         query = query.filter(AuditLog.resource_type == resource_type)
     if resource_id:
         query = query.filter(AuditLog.resource_id == resource_id)
+    if actor_id:
+        query = query.filter(AuditLog.actor_id == actor_id)
+    if status_filter:
+        query = query.filter(AuditLog.status == status_filter)
+    if start_date:
+        query = query.filter(AuditLog.timestamp >= start_date)
+    if end_date:
+        query = query.filter(AuditLog.timestamp <= end_date)
 
     # Scoped to user's organization if not admin
     if not current_user.is_admin:
@@ -39,8 +57,79 @@ def get_audit_logs(
             (AuditLog.organization_id == current_user.organization_id) | (AuditLog.organization_id.is_(None))
         )
 
-    logs = query.order_by(AuditLog.sequence_number.desc()).limit(limit).all()
+    logs = query.order_by(AuditLog.sequence_number.desc()).offset(offset).limit(limit).all()
     return logs
+
+
+@router.get("/export")
+def export_audit_ledger(
+    export_format: str = Query("csv", description="Export format: 'csv' or 'json'"),
+    limit: int = Query(1000, ge=1, le=5000),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Exports a certified tamper-evident audit ledger pack for judicial or compliance auditing.
+    Outputs either CSV or JSON with full SHA-256 hash chains.
+    """
+    if not current_user.is_admin and (not current_user.position or not current_user.position.can_export):
+        raise HTTPException(status_code=403, detail="Position lacks authority to export audit ledgers.")
+
+    query = db.query(AuditLog)
+    if not current_user.is_admin:
+        query = query.filter(
+            (AuditLog.organization_id == current_user.organization_id) | (AuditLog.organization_id.is_(None))
+        )
+    logs = query.order_by(AuditLog.sequence_number.asc()).limit(limit).all()
+
+    if export_format.lower() == "json":
+        data = [
+            {
+                "sequence_number": log.sequence_number,
+                "timestamp": log.timestamp.isoformat(),
+                "action": log.action,
+                "resource_type": log.resource_type,
+                "resource_id": log.resource_id,
+                "actor_id": log.actor_id,
+                "status": log.status,
+                "prev_hash": log.prev_hash,
+                "entry_hash": log.entry_hash,
+                "details": log.details
+            }
+            for log in logs
+        ]
+        return Response(
+            content=json.dumps(data, indent=2),
+            media_type="application/json",
+            headers={"Content-Disposition": "attachment; filename=docuvault_audit_ledger.json"}
+        )
+
+    # Default CSV export
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "Sequence", "Timestamp", "Action", "ResourceType", "ResourceId",
+        "ActorId", "Status", "PreviousHash", "EntryHash", "Details"
+    ])
+    for log in logs:
+        writer.writerow([
+            log.sequence_number,
+            log.timestamp.isoformat(),
+            log.action,
+            log.resource_type,
+            log.resource_id,
+            log.actor_id,
+            log.status,
+            log.prev_hash,
+            log.entry_hash,
+            log.details_json
+        ])
+
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=docuvault_audit_ledger.csv"}
+    )
 
 
 @router.get("/documents/{document_id}", response_model=List[AuditLogResponse])
