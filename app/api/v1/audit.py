@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.constants import ActionType, ResourceType
 from app.models.user import User
+from app.models.document import Document
+from app.models.document_version import DocumentVersion
 from app.models.audit_log import AuditLog
 from app.schemas.audit import AuditLogResponse, AuditIntegrityResponse
 from app.api.deps import get_current_user
@@ -38,6 +40,52 @@ def get_audit_logs(
         )
 
     logs = query.order_by(AuditLog.sequence_number.desc()).limit(limit).all()
+    return logs
+
+
+@router.get("/documents/{document_id}", response_model=List[AuditLogResponse])
+def get_document_audit_trail(
+    document_id: str,
+    limit: int = Query(200, ge=1, le=1000),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Exhaustive Provenance Trail:
+    Retrieves all chronological records of uploads, reads, updates, downloads,
+    approvals, signatures, classification changes, and verification checks for a specific document.
+    """
+    doc = db.query(Document).filter(Document.id == document_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    version_ids = [v.id for v in doc.versions]
+    target_resource_ids = [document_id] + version_ids
+
+    logs = db.query(AuditLog).filter(
+        (AuditLog.resource_id.in_(target_resource_ids)) |
+        (AuditLog.details_json.contains(document_id)) |
+        (AuditLog.details_json.contains(doc.document_number))
+    ).order_by(AuditLog.sequence_number.asc()).limit(limit).all()
+
+    return logs
+
+
+@router.get("/actors/{user_id}", response_model=List[AuditLogResponse])
+def get_actor_audit_trail(
+    user_id: str,
+    limit: int = Query(100, ge=1, le=500),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Retrieves all chronological activities executed by a specific user across the system."""
+    if not current_user.is_admin and current_user.id != user_id:
+        raise HTTPException(status_code=403, detail="Permission denied to inspect external user activity.")
+
+    logs = db.query(AuditLog).filter(
+        AuditLog.actor_id == user_id
+    ).order_by(AuditLog.sequence_number.desc()).limit(limit).all()
+
     return logs
 
 
