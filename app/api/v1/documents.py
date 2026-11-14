@@ -321,6 +321,72 @@ def verify_document_integrity(
     }
 
 
+@router.get("/{document_id}/verify")
+def verify_all_document_versions_integrity(
+    document_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Performs full forensic file verification on disk for ALL versions of a document.
+    Returns status manifest confirming tamper-free state across complete document lifecycle.
+    """
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    AccessControlService.authorize_document(db, current_user, document, ActionType.READ.value)
+
+    versions = db.query(DocumentVersion).filter(
+        DocumentVersion.document_id == document.id
+    ).order_by(DocumentVersion.version_number.asc()).all()
+
+    version_results = []
+    all_intact = True
+
+    for v in versions:
+        if not os.path.isfile(v.file_path):
+            is_intact = False
+            calculated_hash = None
+        else:
+            with open(v.file_path, "rb") as f:
+                calculated_hash = CryptoService.calculate_sha256_stream(f)
+            is_intact = (calculated_hash == v.sha256_hash)
+
+        if not is_intact:
+            all_intact = False
+
+        version_results.append({
+            "version_number": v.version_number,
+            "is_intact": is_intact,
+            "stored_sha256": v.sha256_hash,
+            "calculated_sha256": calculated_hash
+        })
+
+    AuditService.record(
+        db=db,
+        action=(ActionType.VERIFY_INTEGRITY.value if all_intact else ActionType.TAMPER_DETECTED.value),
+        resource_type=ResourceType.DOCUMENT.value,
+        resource_id=document.id,
+        actor=current_user,
+        status=("SUCCESS" if all_intact else "ALERT"),
+        details={
+            "document_number": document.document_number,
+            "all_versions_intact": all_intact,
+            "verified_versions_count": len(version_results)
+        }
+    )
+
+    return {
+        "document_id": document.id,
+        "document_number": document.document_number,
+        "all_versions_intact": all_intact,
+        "total_versions": len(version_results),
+        "versions": version_results,
+        "status": "SECURE_AND_VERIFIED" if all_intact else "INTEGRITY_COMPROMISED"
+    }
+
+
 @router.put("/{document_id}", response_model=DocumentResponse)
 def update_document_metadata(
     document_id: str,
