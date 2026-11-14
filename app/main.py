@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import Base, engine, get_db, sync_db_schema
 from app.api.v1.auth import router as auth_router
+from app.api.v1.users import router as users_router
 from app.api.v1.organizations import router as organizations_router
 from app.api.v1.departments import router as departments_router
 from app.api.v1.positions import router as positions_router
@@ -45,6 +46,7 @@ app.add_middleware(
 
 # Register API v1 Routers
 app.include_router(auth_router, prefix=settings.API_V1_STR)
+app.include_router(users_router, prefix=settings.API_V1_STR)
 app.include_router(organizations_router, prefix=settings.API_V1_STR)
 app.include_router(departments_router, prefix=settings.API_V1_STR)
 app.include_router(positions_router, prefix=settings.API_V1_STR)
