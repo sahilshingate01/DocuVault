@@ -8,6 +8,16 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class UserRegisterRequest(BaseModel):
+    email: EmailStr
+    full_name: str
+    password: str
+    organization_id: Optional[str] = None
+    department_id: Optional[str] = None
+    position_id: Optional[str] = None
+    badge_number: Optional[str] = None
+
+
 class Token(BaseModel):
     access_token: str
     refresh_token: Optional[str] = None
