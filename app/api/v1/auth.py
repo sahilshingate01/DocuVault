@@ -124,19 +124,80 @@ def register(request: UserRegisterRequest, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=UserLoginResponse)
 def login(request: LoginRequest, db: Session = Depends(get_db)):
-    """Authenticate with email and password to receive bearer JWT access and refresh tokens."""
+    """Authenticate with email and password with brute-force lockout protection and audit trail."""
+    from datetime import datetime, timezone, timedelta
+
+    now = datetime.now(timezone.utc)
     user = db.query(User).filter(User.email == request.email).first()
+
+    if user:
+        # Check if account is currently locked out
+        if user.locked_until:
+            # Handle timezone-naive vs timezone-aware timestamps safely
+            locked_until = user.locked_until
+            if locked_until.tzinfo is None:
+                locked_until = locked_until.replace(tzinfo=timezone.utc)
+            if locked_until > now:
+                AuditService.record(
+                    db=db,
+                    action=ActionType.ACCESS_DENIED.value,
+                    resource_type=ResourceType.USER.value,
+                    resource_id=user.id,
+                    actor=user,
+                    status="ALERT",
+                    details={
+                        "reason": "LOCKED_ACCOUNT_LOGIN_ATTEMPT",
+                        "locked_until": locked_until.isoformat(),
+                        "email": user.email
+                    }
+                )
+                minutes_remaining = max(1, int((locked_until - now).total_seconds() / 60))
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Account is temporarily locked due to excessive failed attempts. Please try again in {minutes_remaining} minutes."
+                )
+
     if not user or not verify_password(request.password, user.hashed_password):
+        if user:
+            user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+            details = {
+                "reason": "INVALID_PASSWORD",
+                "email": user.email,
+                "attempt_count": user.failed_login_attempts
+            }
+            if user.failed_login_attempts >= 5:
+                user.locked_until = now + timedelta(minutes=15)
+                details["action"] = "ACCOUNT_LOCKED_15_MINUTES"
+
+            db.commit()
+
+            AuditService.record(
+                db=db,
+                action=ActionType.ACCESS_DENIED.value,
+                resource_type=ResourceType.USER.value,
+                resource_id=user.id,
+                actor=user,
+                status="ALERT" if user.failed_login_attempts >= 5 else "FAILED",
+                details=details
+            )
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password credentials."
         )
+
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="This user account has been disabled."
         )
     
+    # Successful login: reset failed counters and update last login timestamp
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    user.last_login_at = now
+    db.commit()
+
     access_token = create_access_token(subject=user.id)
     refresh_token = create_refresh_token(subject=user.id)
 

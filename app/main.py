@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.database import Base, engine, get_db
+from app.core.database import Base, engine, get_db, sync_db_schema
 from app.api.v1.auth import router as auth_router
 from app.api.v1.workspaces import router as workspaces_router
 from app.api.v1.documents import router as documents_router
@@ -19,8 +19,9 @@ from app.api.v1.custody import router as custody_router
 from app.api.v1.certificates import router as certificates_router
 from app.api.v1.diff import router as diff_router
 
-# Ensure all database tables exist
+# Ensure all database tables exist and are synchronized
 Base.metadata.create_all(bind=engine)
+sync_db_schema(engine)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

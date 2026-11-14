@@ -1,5 +1,5 @@
 """User identity and authorization credential model."""
-from sqlalchemy import Column, String, Boolean, ForeignKey, Text
+from sqlalchemy import Column, String, Boolean, ForeignKey, Text, Integer, DateTime
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 from app.core.constants import ClassificationLevel
@@ -19,6 +19,11 @@ class User(Base, TimeStampedModel):
     
     is_active = Column(Boolean, default=True, nullable=False)
     is_admin = Column(Boolean, default=False, nullable=False)
+
+    # Security & Account Lockout Tracking
+    failed_login_attempts = Column(Integer, default=0, nullable=False)
+    locked_until = Column(DateTime(timezone=True), nullable=True)
+    last_login_at = Column(DateTime(timezone=True), nullable=True)
 
     # Public cryptographic key (PEM format) for digital signature verification
     public_key_pem = Column(Text, nullable=True)
