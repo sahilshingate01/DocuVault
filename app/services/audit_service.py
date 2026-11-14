@@ -115,6 +115,8 @@ class AuditService:
             return {
                 "is_valid": True,
                 "total_records": 0,
+                "total_entries": 0,
+                "tampered_entries": 0,
                 "message": "Audit ledger is empty (pristine genesis state).",
                 "broken_at_sequence": None
             }
@@ -128,6 +130,8 @@ class AuditService:
                 return {
                     "is_valid": False,
                     "total_records": len(logs),
+                    "total_entries": len(logs),
+                    "tampered_entries": 1,
                     "broken_at_sequence": entry.sequence_number,
                     "message": f"Sequence discontinuity detected! Expected #{expected_seq}, found #{entry.sequence_number}."
                 }
@@ -137,6 +141,8 @@ class AuditService:
                 return {
                     "is_valid": False,
                     "total_records": len(logs),
+                    "total_entries": len(logs),
+                    "tampered_entries": 1,
                     "broken_at_sequence": entry.sequence_number,
                     "message": f"Hash chain broken at block #{entry.sequence_number}. Previous hash mismatch."
                 }
@@ -159,6 +165,8 @@ class AuditService:
                 return {
                     "is_valid": False,
                     "total_records": len(logs),
+                    "total_entries": len(logs),
+                    "tampered_entries": 1,
                     "broken_at_sequence": entry.sequence_number,
                     "message": f"Data tampering detected in block #{entry.sequence_number}! Stored hash does not match computed content digest."
                 }
@@ -168,6 +176,8 @@ class AuditService:
         return {
             "is_valid": True,
             "total_records": len(logs),
+            "total_entries": len(logs),
+            "tampered_entries": 0,
             "latest_sequence": logs[-1].sequence_number,
             "head_hash": logs[-1].entry_hash,
             "message": "Cryptographic audit ledger is intact and mathematically verified."
