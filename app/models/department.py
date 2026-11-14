@@ -1,5 +1,5 @@
 """Department organizational unit model."""
-from sqlalchemy import Column, String, Text, ForeignKey
+from sqlalchemy import Column, String, Text, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 from app.models.base import TimeStampedModel
@@ -11,6 +11,7 @@ class Department(Base, TimeStampedModel):
     name = Column(String(150), nullable=False, index=True)
     code = Column(String(50), nullable=False)
     description = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
     
     organization_id = Column(String(36), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
 

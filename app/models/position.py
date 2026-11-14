@@ -14,6 +14,8 @@ class Position(Base, TimeStampedModel):
     title = Column(String(150), nullable=False, index=True)
     code = Column(String(50), nullable=False)
     description = Column(Text, nullable=True)
+    designation_type = Column(String(50), nullable=True)  # e.g. "SP", "JUDGE", "CEO", "MANAGER", "EMPLOYEE", "CUSTOM"
+    is_active = Column(Boolean, default=True, nullable=False)
 
     # Maximum classification level this position is authorized to access
     max_clearance = Column(String(50), default=ClassificationLevel.UNCLASSIFIED.value, nullable=False)
