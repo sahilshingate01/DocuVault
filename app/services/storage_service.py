@@ -17,7 +17,38 @@ class StorageService:
     """Stores document bytes and returns their SHA-256 fingerprint and size."""
 
     CHUNK_SIZE = 64 * 1024
-    MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MiB
+    MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50 MiB
+    DISALLOWED_EXTENSIONS = {".exe", ".sh", ".bat", ".cmd", ".vbs", ".msi"}
+
+    @classmethod
+    def validate_path_safety(cls, file_path: Path) -> Path:
+        """Ensures that the resolved file path resides strictly inside the vault storage boundary."""
+        storage_root = settings.get_storage_path().resolve()
+        resolved = file_path.resolve()
+        if not str(resolved).startswith(str(storage_root)):
+            raise HTTPException(
+                status_code=400,
+                detail="Security violation: Path traversal outside vault storage boundary detected."
+            )
+        return resolved
+
+    @classmethod
+    def get_total_vault_metrics(cls) -> dict:
+        """Calculates total disk usage and stored version file count."""
+        storage_root = settings.get_storage_path()
+        total_bytes = 0
+        file_count = 0
+        if storage_root.exists():
+            for p in storage_root.rglob("*"):
+                if p.is_file() and not p.name.startswith(".upload-"):
+                    total_bytes += p.stat().st_size
+                    file_count += 1
+        return {
+            "total_bytes": total_bytes,
+            "total_mb": round(total_bytes / (1024 * 1024), 2),
+            "file_count": file_count,
+            "storage_root": str(storage_root)
+        }
 
     @staticmethod
     def _safe_filename(original_filename: str | None) -> str:
@@ -42,6 +73,13 @@ class StorageService:
         base_path = settings.get_storage_path() / subfolder
         base_path.mkdir(parents=True, exist_ok=True)
         safe_filename = cls._safe_filename(upload_file.filename)
+
+        ext = Path(safe_filename).suffix.lower()
+        if ext in cls.DISALLOWED_EXTENSIONS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"File extension '{ext}' is not permitted in secure vault storage."
+            )
 
         upload_file.file.seek(0)
         hasher = hashlib.sha256()
