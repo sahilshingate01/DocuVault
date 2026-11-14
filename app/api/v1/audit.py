@@ -43,7 +43,7 @@ def get_audit_logs(
     if resource_id:
         query = query.filter(AuditLog.resource_id == resource_id)
     if actor_id:
-        query = query.filter(AuditLog.actor_id == actor_id)
+        query = query.filter(AuditLog.user_id == actor_id)
     if status_filter:
         query = query.filter(AuditLog.status == status_filter)
     if start_date:
@@ -90,9 +90,10 @@ def export_audit_ledger(
                 "action": log.action,
                 "resource_type": log.resource_type,
                 "resource_id": log.resource_id,
-                "actor_id": log.actor_id,
+                "user_id": log.user_id,
+                "user_email": log.user_email,
                 "status": log.status,
-                "prev_hash": log.prev_hash,
+                "prev_hash": log.previous_hash,
                 "entry_hash": log.entry_hash,
                 "details": log.details
             }
@@ -109,7 +110,7 @@ def export_audit_ledger(
     writer = csv.writer(output)
     writer.writerow([
         "Sequence", "Timestamp", "Action", "ResourceType", "ResourceId",
-        "ActorId", "Status", "PreviousHash", "EntryHash", "Details"
+        "UserId", "Status", "PreviousHash", "EntryHash", "Details"
     ])
     for log in logs:
         writer.writerow([
@@ -118,9 +119,9 @@ def export_audit_ledger(
             log.action,
             log.resource_type,
             log.resource_id,
-            log.actor_id,
+            log.user_id,
             log.status,
-            log.prev_hash,
+            log.previous_hash,
             log.entry_hash,
             log.details_json
         ])
@@ -172,7 +173,7 @@ def get_actor_audit_trail(
         raise HTTPException(status_code=403, detail="Permission denied to inspect external user activity.")
 
     logs = db.query(AuditLog).filter(
-        AuditLog.actor_id == user_id
+        AuditLog.user_id == user_id
     ).order_by(AuditLog.sequence_number.desc()).limit(limit).all()
 
     return logs
