@@ -1,6 +1,6 @@
 """Digital Signature Endpoints: Approval workflows, cryptographic signing, and verification."""
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
@@ -209,3 +209,72 @@ def verify_digital_signature(
         algorithm=sig.algorithm,
         message=message
     )
+
+
+@router.get("/document/{document_id}", response_model=List[SignatureResponse])
+def get_document_signatures(
+    document_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Retrieves all digital signatures affixed across all versions of a document."""
+    doc = db.query(Document).filter(Document.id == document_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    AccessControlService.authorize_document(db, current_user, doc, ActionType.READ.value)
+
+    signatures = []
+    for version in doc.versions:
+        signatures.extend(version.signatures)
+
+    return signatures
+
+
+@router.get("/version/{version_id}", response_model=List[SignatureResponse])
+def get_version_signatures(
+    version_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Retrieves all multi-party digital signatures affixed to a specific version."""
+    version = db.query(DocumentVersion).filter(DocumentVersion.id == version_id).first()
+    if not version:
+        raise HTTPException(status_code=404, detail="Document version not found.")
+
+    AccessControlService.authorize_document(db, current_user, version.document, ActionType.READ.value)
+
+    return version.signatures
+
+
+@router.post("/revoke/{signature_id}")
+def revoke_signature(
+    signature_id: str,
+    reason: str = "Signatory requested revocation due to clerical correction",
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Revokes a digital signature."""
+    sig = db.query(DigitalSignature).filter(DigitalSignature.id == signature_id).first()
+    if not sig:
+        raise HTTPException(status_code=404, detail="Signature not found.")
+
+    doc = sig.document_version.document
+    AccessControlService.authorize_document(db, current_user, doc, ActionType.SIGN.value)
+
+    if not current_user.is_admin and sig.signer_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the original signer or an administrator can revoke this signature.")
+
+    sig.validity_status = "REVOKED"
+    db.commit()
+
+    AuditService.record(
+        db=db,
+        action=ActionType.UPDATE.value,
+        resource_type=ResourceType.SIGNATURE.value,
+        resource_id=sig.id,
+        actor=current_user,
+        details={"action": "REVOKE_SIGNATURE", "reason": reason, "document_id": doc.id}
+    )
+
+    return {"message": "Signature revoked successfully.", "validity_status": "REVOKED"}
