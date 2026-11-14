@@ -81,3 +81,78 @@ def test_workspace_and_document_workflow(client, setup_test_hierarchy):
     verify_ledger = client.get("/api/v1/audit/verify", headers=headers_sp)
     assert verify_ledger.status_code == 200
     assert verify_ledger.json()["is_valid"] is True
+
+
+def test_document_integrity_verification_and_tamper_detection(
+    client, setup_test_hierarchy, db_session
+):
+    """The integrity API accepts an unchanged file and flags modified bytes."""
+    from app.models.document_version import DocumentVersion
+
+    token = setup_test_hierarchy["token_sp"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    workspace_response = client.post(
+        "/api/v1/workspaces",
+        json={"name": "Integrity Test", "code": "CASE-INTEGRITY-1"},
+        headers=headers,
+    )
+    assert workspace_response.status_code == 201
+    workspace_id = workspace_response.json()["id"]
+
+    original_bytes = b"Original case report"
+    upload_response = client.post(
+        "/api/v1/documents/upload",
+        data={
+            "title": "Integrity Report",
+            "document_number": "DOC-INTEGRITY-1",
+            "workspace_id": workspace_id,
+        },
+        files={"file": ("report.txt", original_bytes, "text/plain")},
+        headers=headers,
+    )
+    assert upload_response.status_code == 201
+    document_id = upload_response.json()["id"]
+
+    verify_url = f"/api/v1/documents/{document_id}/versions/1/verify"
+    intact_response = client.get(verify_url, headers=headers)
+    assert intact_response.status_code == 200
+    assert intact_response.json()["is_intact"] is True
+
+    version = db_session.query(DocumentVersion).filter(
+        DocumentVersion.document_id == document_id,
+        DocumentVersion.version_number == 1,
+    ).one()
+    with open(version.file_path, "wb") as stored_file:
+        stored_file.write(b"Modified case report")
+
+    tampered_response = client.get(verify_url, headers=headers)
+    assert tampered_response.status_code == 200
+    assert tampered_response.json()["is_intact"] is False
+    assert tampered_response.json()["stored_sha256"] != tampered_response.json()["calculated_sha256"]
+
+
+def test_upload_rejects_files_larger_than_limit(client, setup_test_hierarchy):
+    from app.services.storage_service import StorageService
+
+    token = setup_test_hierarchy["token_sp"]
+    headers = {"Authorization": f"Bearer {token}"}
+    workspace_response = client.post(
+        "/api/v1/workspaces",
+        json={"name": "Size Test", "code": "CASE-SIZE-1"},
+        headers=headers,
+    )
+    assert workspace_response.status_code == 201
+
+    too_large = b"x" * (StorageService.MAX_UPLOAD_SIZE + 1)
+    response = client.post(
+        "/api/v1/documents/upload",
+        data={
+            "title": "Oversized Report",
+            "document_number": "DOC-OVERSIZE-1",
+            "workspace_id": workspace_response.json()["id"],
+        },
+        files={"file": ("large.txt", too_large, "text/plain")},
+        headers=headers,
+    )
+    assert response.status_code == 413

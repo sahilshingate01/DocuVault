@@ -179,6 +179,63 @@ def upload_new_version(
     return _to_doc_response(document)
 
 
+@router.get("/{document_id}/versions/{version_number}/verify")
+def verify_document_integrity(
+    document_id: str,
+    version_number: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Recalculate a stored version's SHA-256 fingerprint and compare it with its record."""
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    AccessControlService.authorize_document(db, current_user, document, ActionType.READ.value)
+
+    version = db.query(DocumentVersion).filter(
+        DocumentVersion.document_id == document.id,
+        DocumentVersion.version_number == version_number
+    ).first()
+    if not version:
+        raise HTTPException(status_code=404, detail="Document version not found.")
+
+    if not os.path.isfile(version.file_path):
+        raise HTTPException(status_code=404, detail="Stored document file is missing.")
+
+    with open(version.file_path, "rb") as stored_file:
+        calculated_hash = CryptoService.calculate_sha256_stream(stored_file)
+
+    is_intact = calculated_hash == version.sha256_hash
+    AuditService.record(
+        db=db,
+        action=(ActionType.VERIFY_INTEGRITY.value if is_intact else ActionType.TAMPER_DETECTED.value),
+        resource_type=ResourceType.DOCUMENT_VERSION.value,
+        resource_id=version.id,
+        actor=current_user,
+        status=("SUCCESS" if is_intact else "ALERT"),
+        details={
+            "version_number": version.version_number,
+            "stored_fingerprint": version.sha256_hash,
+            "calculated_fingerprint": calculated_hash,
+            "integrity_verified": is_intact
+        }
+    )
+
+    return {
+        "document_id": document.id,
+        "version_number": version.version_number,
+        "is_intact": is_intact,
+        "stored_sha256": version.sha256_hash,
+        "calculated_sha256": calculated_hash,
+        "message": (
+            "Document integrity verified. The stored file matches its original fingerprint."
+            if is_intact else
+            "Integrity check failed. The stored file may have been modified or corrupted."
+        )
+    }
+
+
 @router.get("/{document_id}", response_model=DocumentDetail)
 def get_document(
     document_id: str,
