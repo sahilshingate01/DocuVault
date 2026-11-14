@@ -281,6 +281,29 @@ class AccessControlService:
                 "evaluated_policies": rules_evaluated
             }
 
+        # 4b. Bell-LaPadula Star-Property (*-Property): Workspace classification containment
+        if resource_type == ResourceType.DOCUMENT.value and resource_id:
+            doc = db.query(Document).filter(Document.id == resource_id).first()
+            if doc and doc.workspace:
+                ws_rank = ClassificationLevel.get_rank(doc.workspace.classification)
+                doc_rank = ClassificationLevel.get_rank(doc.classification)
+                star_property_ok = doc_rank <= ws_rank
+                rules_evaluated.append({
+                    "rule": "BELL_LAPADULA_STAR_CONTAINMENT",
+                    "passed": star_property_ok,
+                    "details": f"Document rank ({doc_rank}) cannot exceed enclosing workspace rank ({ws_rank})"
+                })
+                if not star_property_ok:
+                    return {
+                        "decision": "DENY",
+                        "allowed": False,
+                        "denial_reason": f"Bell-LaPadula Star-Property violation: Document classified '{doc.classification}' exceeds workspace boundary '{doc.workspace.classification}'.",
+                        "code": "CONFINEMENT_BREACH",
+                        "subject_attributes": subject_attrs,
+                        "resource_attributes": resource_attrs,
+                        "evaluated_policies": rules_evaluated
+                    }
+
         # 5. Rule: Archival / Closed Resource Mutation Check
         if is_closed_or_archived and action in [ActionType.WRITE.value, ActionType.UPDATE.value, ActionType.SIGN.value]:
             rule_archival = {
