@@ -230,6 +230,32 @@ class AccessControlService:
                 "evaluated_policies": rules_evaluated
             }
 
+        # 3b. Rule: Department boundary isolation for mutations
+        designation = (getattr(user.position, "designation_type", None) or "").upper()
+        is_executive = designation in ["SP", "JUDGE", "CEO", "DIRECTOR"] or user.is_admin
+        dept_match = True
+        if res_dept_id and user.department_id and res_dept_id != user.department_id:
+            # Cross-department writes/updates are restricted to executive designations (SP, Judge, CEO) or admins
+            if action in [ActionType.WRITE.value, ActionType.UPDATE.value, ActionType.DELETE.value, ActionType.APPROVE.value]:
+                dept_match = is_executive
+
+        rule_dept = {
+            "rule": "DEPARTMENT_BOUNDARY_POLICY",
+            "passed": dept_match,
+            "details": f"User dept {user.department_id} vs resource dept {res_dept_id} (Executive override: {is_executive})"
+        }
+        rules_evaluated.append(rule_dept)
+        if not dept_match:
+            return {
+                "decision": "DENY",
+                "allowed": False,
+                "denial_reason": "Cross-department modification denied: Department boundary enforcement restricts non-executive users from modifying external department assets.",
+                "code": "DEPARTMENT_BOUNDARY_VIOLATION",
+                "subject_attributes": subject_attrs,
+                "resource_attributes": resource_attrs,
+                "evaluated_policies": rules_evaluated
+            }
+
         # 4. Rule: Bell-LaPadula Security Clearance (with Temporary Clearance delegation check)
         clearance_ok = cls.has_clearance(
             db=db,
