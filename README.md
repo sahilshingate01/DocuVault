@@ -99,8 +99,44 @@ Open your browser to:
 
 ## 🧪 Testing the Security Model
 
-Run the comprehensive test suite covering cryptographic validation, audit ledger tampering detection, and clearance violation rejection:
+Run the comprehensive test suite covering cryptographic validation, audit ledger tampering detection, ABAC evaluation, and clearance violation rejection:
 
 ```bash
-pytest -v
+PYTHONPATH=. pytest -v
 ```
+
+---
+
+## 👥 Module Implementation & Division Summary
+
+### Person 1 – Authentication & Organisation Management (Identity Management)
+- **User Registration & Login**: Multi-tenant onboarding, cryptographic keypair generation, credential authentication.
+- **JWT Authentication & Refresh Tokens**: Dual token architecture (`/auth/login`, `/auth/refresh`, `/auth/logout`) with token rotation and revocation.
+- **Account Security & Lockout**: Salting and bcrypt hashing, password complexity verification, 5-strike brute-force lockout with cooldown timer.
+- **Organisation Management**: Complete multi-tenant CRUD (`/api/v1/organizations`) with resource telemetry.
+- **Department Management**: Sub-organizational boundaries (`/api/v1/departments`) with head/code indexing.
+- **Custom Positions & Designations**: Standard designations (`SP`, `Judge`, `CEO`, `Manager`, `Employee`) and custom positions (`/api/v1/positions`) with capability flags (`can_sign`, `can_approve`, `can_export`, `can_manage_users`) and allowed actions list.
+- **User Administration & Role Assignment**: (`/api/v1/users`) assigning users to organizations, departments, positions, and adjusting clearance tiers.
+
+### Person 2 – Document Vault & Version Management (Document Vault)
+- **Secure File Storage**: Path traversal defense, executable file upload rejection, atomic streaming upload to temporary files.
+- **Document Upload & Download**: APIs (`/api/v1/documents/upload`, `/api/v1/documents/{id}/download`, `/api/v1/documents/{id}/versions/{v}/download`) returning `X-Vault-SHA256` headers.
+- **Metadata Management**: Document updating (`PUT /api/v1/documents/{id}`), tagging, search indexing.
+- **Workspace Management**: Cases, Projects, Files (`/api/v1/workspaces`) with classification bounds and statistics.
+- **Classification Lifecycle**: Bell-LaPadula clearance tiers (`UNCLASSIFIED`, `RESTRICTED`, `CONFIDENTIAL`, `SECRET`, `TOP_SECRET`) with formal reclassification (`POST /documents/{id}/reclassify`).
+- **Version Control & Rollback**: Immutable version ledger, version history (`GET /documents/{id}/versions`), and zero-loss version rollback (`POST /documents/{id}/versions/{v}/restore`).
+- **File Integrity Verification**: On-demand disk bitstream verification per version (`GET .../verify`) and document-wide (`GET /documents/{id}/verify`).
+- **Digital Signatures**: RSA-PSS-SHA256 signing, multi-party signature querying (`/signatures/document/{id}`), verification (`/signatures/verify/{id}`), and signature revocation.
+- **Archival & Trash Bin**: Document sealing (`/archive`, `/unarchive`), retention periods, soft deletion to trash bin, and trash restoration.
+- **Nexus CLI Client**: Terminal interface for DocuVault operations under `nexus_cli/`.
+
+### Person 3 – Authorization, Security & Audit Management (Security & Audit)
+- **Attribute-Based Access Control (ABAC)**: Multi-attribute engine evaluating Subject, Resource, Action, and Context attributes.
+- **Position & Department Enforcement**: Action rights mapped to positions, department isolation with executive bypass (SP, Judge, CEO).
+- **Bell-LaPadula Multilevel Security**: Simple Security Property (No Read Up) and Confinement Star-Property (No Write Down).
+- **Delegated Temporary Clearances**: Time-bound elevated access (`/clearance/grant`, `/clearance/active`, `/clearance/{id}/revoke`).
+- **Permission Evaluation Engine**: Real-time pre-flight check API (`POST /security/evaluate`) returning rule traces and decisions.
+- **Tamper-Evident Audit Logging**: Cryptographically hash-chained SHA-256 blocks linking every single system event.
+- **Document Provenance Trail**: Per-document audit trail (`GET /audit/documents/{id}`) and per-actor audit query (`GET /audit/actors/{id}`).
+- **Audit Export**: Forensic export to CSV and JSON formats (`GET /audit/export`).
+- **Security Event Monitoring & SOC Dashboard**: Real-time anomaly detection, repeated violation alerts, and security metrics (`/security/dashboard`, `/security/alerts`).
