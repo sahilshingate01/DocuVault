@@ -62,6 +62,12 @@
                 <button class="nav-item" data-tab="search">
                     <span class="icon">🔍</span> Clearance Search
                 </button>
+                <button class="nav-item" data-tab="organizations">
+                    <span class="icon">🏛️</span> Organizations & Roles
+                </button>
+                <button class="nav-item" data-tab="security">
+                    <span class="icon">🛡️</span> ABAC & Security SOC
+                </button>
             </nav>
 
             <div class="sidebar-status-card">
@@ -193,6 +199,56 @@
                 <div id="searchResultsCount" class="search-meta"></div>
                 <div id="searchResultsGrid" class="grid-cards">
                     <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Tab 6: Organizations & Roles (Person 1) -->
+            <div id="tab-organizations" class="tab-pane">
+                <div class="pane-header">
+                    <div>
+                        <h2>Organizations, Departments & Designations</h2>
+                        <p class="subtitle">Multi-tenant hierarchy and Role-Based Access Control (RBAC)</p>
+                    </div>
+                </div>
+                <div id="orgsContainer" class="grid-cards">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Tab 7: ABAC & Security SOC (Person 3) -->
+            <div id="tab-security" class="tab-pane">
+                <div class="pane-header">
+                    <div>
+                        <h2>ABAC Authorization Engine & Security SOC</h2>
+                        <p class="subtitle">Attribute-Based Access Control and continuous compliance telemetry</p>
+                    </div>
+                </div>
+
+                <div class="security-dashboard-grid" id="securityDashboardMetrics">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <div class="signature-instruction-card" style="margin-top: 1.5rem;">
+                    <h3>Pre-Flight ABAC Policy Simulator</h3>
+                    <p>Simulate the multi-attribute policy evaluation engine against Subject, Resource, Action, and Clearance attributes.</p>
+                    <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+                        <select id="abacActionSelect" class="form-select" style="max-width: 200px;">
+                            <option value="READ">Action: READ</option>
+                            <option value="WRITE">Action: WRITE</option>
+                            <option value="UPDATE">Action: UPDATE</option>
+                            <option value="DELETE">Action: DELETE</option>
+                            <option value="DOWNLOAD">Action: DOWNLOAD</option>
+                            <option value="APPROVE">Action: APPROVE</option>
+                            <option value="SIGN">Action: SIGN</option>
+                        </select>
+                        <select id="abacResourceTypeSelect" class="form-select" style="max-width: 200px;">
+                            <option value="DOCUMENT">Resource: DOCUMENT</option>
+                            <option value="WORKSPACE">Resource: WORKSPACE</option>
+                        </select>
+                        <input type="text" id="abacResourceIdInput" class="form-input" placeholder="Resource UUID (optional)" style="flex: 1; min-width: 200px;">
+                        <button id="btnRunAbacEval" class="btn btn-primary">Evaluate ABAC Policy</button>
+                    </div>
+                    <div id="abacEvaluationResult" style="margin-top: 1rem;"></div>
                 </div>
             </div>
         </section>

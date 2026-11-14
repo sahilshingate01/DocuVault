@@ -158,6 +158,8 @@ function refreshActiveTab() {
     else if (activeTab === "tab-signatures") loadSignaturesView();
     else if (activeTab === "tab-audit") loadAuditLedger();
     else if (activeTab === "tab-search") performSearch();
+    else if (activeTab === "tab-organizations") loadOrganizations();
+    else if (activeTab === "tab-security") loadSecurityDashboard();
 }
 
 // --- TAB 1: WORKSPACES ---
@@ -542,6 +544,127 @@ document.getElementById("workspaceForm").addEventListener("submit", async (e) =>
 personaSelect.addEventListener("change", (e) => {
     switchPersona(e.target.value);
 });
+
+// --- TAB 6: ORGANIZATIONS & ROLES (Person 1) ---
+async function loadOrganizations() {
+    const container = document.getElementById("orgsContainer");
+    if (!container) return;
+    container.innerHTML = `<p class="subtitle">Loading organization infrastructure...</p>`;
+
+    const resp = await apiFetch("/api/v1/organizations");
+    if (!resp.ok) {
+        container.innerHTML = `<p class="subtitle">Unable to load organizations.</p>`;
+        return;
+    }
+    const orgs = await resp.json();
+    if (!orgs.length) {
+        container.innerHTML = `<p class="subtitle">No organizations registered.</p>`;
+        return;
+    }
+
+    container.innerHTML = orgs.map(org => `
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h3 class="card-title">${escapeHtml(org.name)}</h3>
+                    <div class="card-code">${escapeHtml(org.code || org.slug)}</div>
+                </div>
+                <span class="badge ${org.is_active ? 'badge-approved' : 'badge-draft'}">${org.is_active ? 'Active Tenant' : 'Inactive'}</span>
+            </div>
+            <p class="card-description">${escapeHtml(org.description || 'Enterprise Organization')}</p>
+            <div style="font-size: 0.85rem; color: #a1a1aa; margin-top: 0.5rem;">
+                <div>🏛️ Jurisdiction: <strong>${escapeHtml(org.jurisdiction || 'General')}</strong></div>
+                <div>🏢 Departments: <strong>${org.department_count}</strong> | 👥 Users: <strong>${org.user_count}</strong> | 📁 Workspaces: <strong>${org.workspace_count}</strong></div>
+            </div>
+        </div>
+    `).join("");
+}
+
+// --- TAB 7: ABAC & SECURITY SOC (Person 3) ---
+async function loadSecurityDashboard() {
+    const metricsContainer = document.getElementById("securityDashboardMetrics");
+    if (!metricsContainer) return;
+
+    const resp = await apiFetch("/api/v1/security/dashboard");
+    if (!resp.ok) {
+        metricsContainer.innerHTML = `<p class="subtitle">Unable to load security metrics.</p>`;
+        return;
+    }
+    const data = await resp.json();
+
+    metricsContainer.innerHTML = `
+        <div class="card">
+            <h4 style="margin-top:0;">🔗 Cryptographic Ledger</h4>
+            <div style="font-size:1.5rem; font-weight:bold; color:${data.ledger_integrity.is_valid ? '#10b981' : '#ef4444'};">
+                ${data.ledger_integrity.is_valid ? 'INTACT & VERIFIED' : 'TAMPER DETECTED'}
+            </div>
+            <p style="font-size:0.85rem; color:#a1a1aa; margin-top:0.5rem;">
+                Blocks Scanned: <strong>${data.ledger_integrity.total_blocks}</strong> | Compromised: <strong>${data.ledger_integrity.tampered_blocks}</strong>
+            </p>
+        </div>
+        <div class="card">
+            <h4 style="margin-top:0;">🛡️ 24h Telemetry</h4>
+            <div style="font-size:1.5rem; font-weight:bold; color:#60a5fa;">
+                ${data.activity_metrics_24h.total_audit_events} Events
+            </div>
+            <p style="font-size:0.85rem; color:#a1a1aa; margin-top:0.5rem;">
+                Access Denials: <strong>${data.activity_metrics_24h.access_denials}</strong> | Downloads: <strong>${data.activity_metrics_24h.downloads}</strong>
+            </p>
+        </div>
+        <div class="card">
+            <h4 style="margin-top:0;">🚨 Active Security Alerts</h4>
+            <div style="font-size:1.5rem; font-weight:bold; color:${data.security_posture.active_alerts_count > 0 ? '#f59e0b' : '#10b981'};">
+                ${data.security_posture.active_alerts_count} Active
+            </div>
+            <p style="font-size:0.85rem; color:#a1a1aa; margin-top:0.5rem;">
+                Critical Threats: <strong>${data.security_posture.critical_threats}</strong> | Temp Clearances: <strong>${data.active_temporary_clearances}</strong>
+            </p>
+        </div>
+    `;
+}
+
+// Pre-flight ABAC Evaluator Button
+const btnRunAbacEval = document.getElementById("btnRunAbacEval");
+if (btnRunAbacEval) {
+    btnRunAbacEval.addEventListener("click", async () => {
+        const action = document.getElementById("abacActionSelect").value;
+        const resource_type = document.getElementById("abacResourceTypeSelect").value;
+        const resource_id = document.getElementById("abacResourceIdInput").value.trim() || null;
+        const resultDiv = document.getElementById("abacEvaluationResult");
+
+        resultDiv.innerHTML = `<p class="subtitle">Evaluating multi-attribute ABAC policy...</p>`;
+
+        const resp = await apiFetch("/api/v1/security/evaluate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action, resource_type, resource_id })
+        });
+
+        if (!resp.ok) {
+            resultDiv.innerHTML = `<div class="badge badge-draft">Evaluation request failed</div>`;
+            return;
+        }
+
+        const res = await resp.json();
+        const isAllow = res.decision === "ALLOW";
+
+        resultDiv.innerHTML = `
+            <div style="padding: 1rem; border-radius: 8px; background: ${isAllow ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; border: 1px solid ${isAllow ? '#10b981' : '#ef4444'}; margin-top: 0.5rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <strong style="font-size: 1.1rem; color: ${isAllow ? '#10b981' : '#ef4444'};">Decision: ${res.decision}</strong>
+                    <span class="badge ${isAllow ? 'badge-approved' : 'badge-top-secret'}">${res.code || 'COMPLETED'}</span>
+                </div>
+                ${res.denial_reason ? `<p style="margin: 0.5rem 0; color: #fca5a5;">Reason: ${escapeHtml(res.denial_reason)}</p>` : ''}
+                <div style="margin-top: 0.75rem; font-size: 0.85rem;">
+                    <strong>Evaluated Policies (${res.evaluated_policies.length}):</strong>
+                    <ul style="margin: 0.25rem 0 0 1.25rem; padding: 0;">
+                        ${res.evaluated_policies.map(p => `<li>${p.passed ? '✅' : '❌'} <strong>${escapeHtml(p.rule)}</strong>: ${escapeHtml(p.details)}</li>`).join('')}
+                    </ul>
+                </div>
+            </div>
+        `;
+    });
+}
 
 // Initialize with Superintendent of Police persona
 switchPersona("sp");
