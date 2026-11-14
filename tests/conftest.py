@@ -60,7 +60,7 @@ def setup_test_hierarchy(db_session):
     db_session.add(dept)
     db_session.flush()
 
-    # Position 1: SP (Top Secret, can sign, can approve)
+    # Position 1: SP (Top Secret, can sign, can approve, can manage users)
     pos_sp = Position(
         title="Superintendent of Police",
         code="SP",
@@ -68,6 +68,7 @@ def setup_test_hierarchy(db_session):
         can_sign=True,
         can_approve=True,
         can_export=True,
+        can_manage_users=True,
         allowed_actions=["READ", "WRITE", "UPDATE", "APPROVE", "SIGN", "DELETE"],
         department_id=dept.id
     )
