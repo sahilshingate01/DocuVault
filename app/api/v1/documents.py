@@ -185,6 +185,85 @@ def upload_new_version(
     return _to_doc_response(document)
 
 
+@router.get("/{document_id}/versions", response_model=List[DocumentVersionResponse])
+def get_version_history(
+    document_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Retrieves full version history of a document with cryptographic SHA-256 digests and approvals."""
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    AccessControlService.authorize_document(db, current_user, document, ActionType.READ.value)
+
+    versions = db.query(DocumentVersion).filter(
+        DocumentVersion.document_id == document.id
+    ).order_by(DocumentVersion.version_number.desc()).all()
+
+    return [DocumentVersionResponse.model_validate(v) for v in versions]
+
+
+@router.post("/{document_id}/versions/{version_number}/restore", response_model=DocumentResponse)
+def restore_version(
+    document_id: str,
+    version_number: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Rolls back / restores an earlier version as a new sequential version.
+    Preserves audit history and cryptographic fingerprints without rewriting historical versions.
+    """
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    AccessControlService.authorize_document(db, current_user, document, ActionType.UPDATE.value)
+
+    target_version = db.query(DocumentVersion).filter(
+        DocumentVersion.document_id == document.id,
+        DocumentVersion.version_number == version_number
+    ).first()
+    if not target_version:
+        raise HTTPException(status_code=404, detail=f"Version {version_number} not found.")
+
+    latest_ver = (document.versions[0].version_number + 1) if document.versions else 1
+
+    new_version = DocumentVersion(
+        version_number=latest_ver,
+        file_path=target_version.file_path,
+        original_filename=target_version.original_filename,
+        file_size=target_version.file_size,
+        mime_type=target_version.mime_type,
+        sha256_hash=target_version.sha256_hash,
+        change_summary=f"Rollback: Restored state of version {version_number}",
+        document_id=document.id,
+        uploaded_by_id=current_user.id
+    )
+    db.add(new_version)
+    document.status = DocumentStatus.PENDING_APPROVAL.value
+    db.commit()
+    db.refresh(document)
+
+    AuditService.record(
+        db=db,
+        action=ActionType.UPDATE.value,
+        resource_type=ResourceType.DOCUMENT.value,
+        resource_id=document.id,
+        actor=current_user,
+        details={
+            "action": "VERSION_ROLLBACK",
+            "restored_from_version": version_number,
+            "new_version": latest_ver,
+            "sha256": target_version.sha256_hash
+        }
+    )
+
+    return _to_doc_response(document)
+
+
 @router.get("/{document_id}/versions/{version_number}/verify")
 def verify_document_integrity(
     document_id: str,
