@@ -42,8 +42,10 @@ def seed_database():
         org_police = Organization(
             name="State Police Department",
             slug="state-police",
+            code="POL-HQ",
             description="State Law Enforcement and Criminal Investigation Agency",
-            jurisdiction="State Law Enforcement"
+            jurisdiction="State Law Enforcement",
+            contact_email="dispatch@police.gov.in"
         )
         db.add(org_police)
         db.flush()
@@ -61,6 +63,7 @@ def seed_database():
             title="Superintendent of Police",
             code="SP",
             description="Executive Police Commander with highest security clearance and signing authority",
+            designation_type="SP",
             max_clearance=ClassificationLevel.TOP_SECRET.value,
             can_sign=True,
             can_approve=True,
@@ -73,6 +76,7 @@ def seed_database():
             title="Investigating Officer",
             code="IO",
             description="Field investigator authorized to write reports and upload evidence",
+            designation_type="EMPLOYEE",
             max_clearance=ClassificationLevel.CONFIDENTIAL.value,
             can_sign=False,
             can_approve=False,
@@ -234,8 +238,10 @@ Signed: Superintendent of Police Vikram Sharma
         org_court = Organization(
             name="District Court of Justice",
             slug="district-court",
+            code="DIST-COURT",
             description="Judicial Court of District Administration",
-            jurisdiction="Judiciary"
+            jurisdiction="Judiciary",
+            contact_email="registry@judiciary.gov.in"
         )
         db.add(org_court)
         db.flush()
@@ -253,6 +259,7 @@ Signed: Superintendent of Police Vikram Sharma
             title="Principal District Judge",
             code="PDJ",
             description="Presiding judicial officer with supreme judicial signing and decree powers",
+            designation_type="JUDGE",
             max_clearance=ClassificationLevel.TOP_SECRET.value,
             can_sign=True,
             can_approve=True,
@@ -265,6 +272,7 @@ Signed: Superintendent of Police Vikram Sharma
             title="Court Record Clerk",
             code="CRC",
             description="Record keeper authorized to catalogue filings with restricted clearance",
+            designation_type="EMPLOYEE",
             max_clearance=ClassificationLevel.RESTRICTED.value,
             can_sign=False,
             can_approve=False,
@@ -379,8 +387,10 @@ Given under my hand and official seal of the Court.
         org_corp = Organization(
             name="Apex Cybernetics Corporation",
             slug="apex-corp",
+            code="APEX-HQ",
             description="Global Enterprise and Advanced Software Systems",
-            jurisdiction="Corporate Enterprise"
+            jurisdiction="Corporate Enterprise",
+            contact_email="legal@apexcorp.com"
         )
         db.add(org_corp)
         db.flush()
@@ -398,6 +408,7 @@ Given under my hand and official seal of the Court.
             title="Chief Executive Officer",
             code="CEO",
             description="Corporate executive with full contract signing authority",
+            designation_type="CEO",
             max_clearance=ClassificationLevel.TOP_SECRET.value,
             can_sign=True,
             can_approve=True,
@@ -406,10 +417,24 @@ Given under my hand and official seal of the Court.
             allowed_actions=["READ", "WRITE", "UPDATE", "APPROVE", "SIGN", "DELETE", "EXPORT"],
             department_id=dept_exec.id
         )
+        pos_manager = Position(
+            title="Operations Manager",
+            code="MGR",
+            description="Departmental manager overseeing operations and compliance",
+            designation_type="MANAGER",
+            max_clearance=ClassificationLevel.SECRET.value,
+            can_sign=False,
+            can_approve=True,
+            can_export=True,
+            can_manage_users=True,
+            allowed_actions=["READ", "WRITE", "UPDATE", "APPROVE", "EXPORT"],
+            department_id=dept_exec.id
+        )
         pos_analyst = Position(
             title="Junior Analyst",
             code="ANA",
             description="Junior associate with general unclassified access",
+            designation_type="EMPLOYEE",
             max_clearance=ClassificationLevel.UNCLASSIFIED.value,
             can_sign=False,
             can_approve=False,
@@ -418,7 +443,7 @@ Given under my hand and official seal of the Court.
             allowed_actions=["READ"],
             department_id=dept_exec.id
         )
-        db.add_all([pos_ceo, pos_analyst])
+        db.add_all([pos_ceo, pos_manager, pos_analyst])
         db.flush()
 
         ceo_priv, ceo_pub = CryptoService.generate_keypair()
