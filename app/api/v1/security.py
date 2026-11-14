@@ -14,8 +14,89 @@ from app.schemas.security import (
 from app.api.deps import get_current_user
 from app.services.access_control import AccessControlService
 from app.services.security_monitor import SecurityMonitorService
+from app.services.audit_service import AuditService
+from app.models.audit_log import AuditLog
+from app.models.temporary_clearance import TemporaryClearance
 
 router = APIRouter(prefix="/security", tags=["Security & Authorization Engine"])
+
+
+@router.get("/dashboard")
+def get_security_dashboard(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Security Operations Center (SOC) telemetry dashboard:
+    Aggregates ledger integrity, clearance metrics, access denial trends, and alert telemetry.
+    """
+    from datetime import datetime, timezone, timedelta
+
+    now = datetime.now(timezone.utc)
+    since_24h = now - timedelta(hours=24)
+
+    org_filter = [AuditLog.organization_id == current_user.organization_id] if not current_user.is_admin else []
+
+    total_audit_events = db.query(AuditLog).filter(*org_filter).count()
+    denials_24h = db.query(AuditLog).filter(
+        AuditLog.action == ActionType.ACCESS_DENIED.value,
+        AuditLog.timestamp >= since_24h,
+        *org_filter
+    ).count()
+
+    downloads_24h = db.query(AuditLog).filter(
+        AuditLog.action == ActionType.DOWNLOAD.value,
+        AuditLog.timestamp >= since_24h,
+        *org_filter
+    ).count()
+
+    active_temp_clearances = db.query(TemporaryClearance).filter(
+        TemporaryClearance.is_revoked == False,
+        TemporaryClearance.valid_until >= now
+    ).count()
+
+    # User clearance distribution
+    user_query = db.query(User)
+    if not current_user.is_admin:
+        user_query = user_query.filter(User.organization_id == current_user.organization_id)
+    users = user_query.all()
+    user_clearance_dist = {}
+    for u in users:
+        eff = AccessControlService.get_effective_clearance(u).value
+        user_clearance_dist[eff] = user_clearance_dist.get(eff, 0) + 1
+
+    # Document classification distribution
+    doc_query = db.query(Document)
+    if not current_user.is_admin:
+        doc_query = doc_query.filter(Document.workspace.has(organization_id=current_user.organization_id))
+    docs = doc_query.all()
+    doc_class_dist = {}
+    for d in docs:
+        doc_class_dist[d.classification] = doc_class_dist.get(d.classification, 0) + 1
+
+    alerts = SecurityMonitorService.get_security_alerts(db, org_id=None if current_user.is_admin else current_user.organization_id)
+
+    integrity_check = AuditService.verify_ledger_integrity(db)
+
+    return {
+        "ledger_integrity": {
+            "is_valid": integrity_check["is_valid"],
+            "total_blocks": integrity_check["total_entries"],
+            "tampered_blocks": integrity_check["tampered_entries"]
+        },
+        "activity_metrics_24h": {
+            "total_audit_events": total_audit_events,
+            "access_denials": denials_24h,
+            "downloads": downloads_24h
+        },
+        "active_temporary_clearances": active_temp_clearances,
+        "security_posture": {
+            "user_clearance_distribution": user_clearance_dist,
+            "document_classification_distribution": doc_class_dist,
+            "active_alerts_count": len(alerts),
+            "critical_threats": sum(1 for a in alerts if a["severity"] == "CRITICAL")
+        }
+    }
 
 
 @router.get("/alerts")
