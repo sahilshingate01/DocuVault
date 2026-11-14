@@ -570,5 +570,32 @@ def download_document_version(
     return FileResponse(
         path=version.file_path,
         filename=version.original_filename,
-        media_type=version.mime_type
+        media_type=version.mime_type,
+        headers={
+            "X-Vault-SHA256": version.sha256_hash,
+            "X-Vault-Version": str(version.version_number)
+        }
+    )
+
+
+@router.get("/{document_id}/download")
+def download_latest_document(
+    document_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Downloads the latest active version of a document with cryptographic verification."""
+    document = db.query(Document).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    if not document.versions:
+        raise HTTPException(status_code=404, detail="Document has no uploaded versions.")
+
+    latest_version = document.versions[0]
+    return download_document_version(
+        document_id=document.id,
+        version_number=latest_version.version_number,
+        db=db,
+        current_user=current_user
     )
