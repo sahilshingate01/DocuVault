@@ -10,6 +10,7 @@ from app.models.document_version import DocumentVersion
 from app.models.signature import DigitalSignature
 from app.models.audit_log import AuditLog
 from app.models.chain_of_custody import ChainOfCustody
+from app.models.temporary_clearance import TemporaryClearance
 
 __all__ = [
     "TimeStampedModel",
@@ -23,4 +24,5 @@ __all__ = [
     "DigitalSignature",
     "AuditLog",
     "ChainOfCustody",
+    "TemporaryClearance",
 ]

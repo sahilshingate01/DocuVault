@@ -1,11 +1,13 @@
-"""Access Control & Clearance Engine: Dynamic multi-tier policy enforcement."""
-from typing import Optional, Tuple
+"""Access Control & Clearance Engine: Dynamic multi-tier ABAC policy enforcement."""
+from datetime import datetime, timezone
+from typing import Optional, Tuple, Dict, Any, List
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-from app.core.constants import ClassificationLevel, ActionType, ResourceType
+from app.core.constants import ClassificationLevel, ActionType, ResourceType, DocumentStatus
 from app.models.user import User
 from app.models.workspace import Workspace
 from app.models.document import Document
+from app.models.temporary_clearance import TemporaryClearance
 from app.services.audit_service import AuditService
 
 
@@ -34,6 +36,43 @@ class AccessControlService:
         return ClassificationLevel.UNCLASSIFIED
 
     @classmethod
+    def has_clearance(
+        cls,
+        db: Session,
+        user: User,
+        target_classification: str,
+        workspace_id: Optional[str] = None,
+        document_id: Optional[str] = None
+    ) -> bool:
+        """Checks if user has required clearance either permanently or via active temporary grant."""
+        effective_clearance = cls.get_effective_clearance(user)
+        if ClassificationLevel.can_access(effective_clearance, target_classification):
+            return True
+
+        # Check temporary clearance grants
+        now = datetime.now(timezone.utc)
+        temp_grants = db.query(TemporaryClearance).filter(
+            TemporaryClearance.user_id == user.id,
+            TemporaryClearance.is_revoked == False,
+            TemporaryClearance.valid_from <= now,
+            TemporaryClearance.valid_until >= now
+        ).all()
+
+        for grant in temp_grants:
+            matches_scope = False
+            if grant.document_id and document_id and grant.document_id == document_id:
+                matches_scope = True
+            elif grant.workspace_id and workspace_id and grant.workspace_id == workspace_id:
+                matches_scope = True
+            elif not grant.workspace_id and not grant.document_id:
+                matches_scope = True
+
+            if matches_scope and ClassificationLevel.can_access(grant.granted_clearance, target_classification):
+                return True
+
+        return False
+
+    @classmethod
     def can_perform_action(cls, user: User, action: str) -> bool:
         """Validates if user's position allows the given action type."""
         if user.is_admin:
@@ -53,6 +92,198 @@ class AccessControlService:
         return action in allowed or "*" in allowed
 
     @classmethod
+    def evaluate_abac_policy(
+        cls,
+        db: Session,
+        user: User,
+        action: str,
+        resource_type: str,
+        resource_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Comprehensive Attribute-Based Access Control (ABAC) evaluation engine.
+        Evaluates Subject, Resource, Action, and Environment context attributes.
+        Returns explicit Allow/Deny decision with full rule trace.
+        """
+        now = datetime.now(timezone.utc)
+        rules_evaluated: List[Dict[str, Any]] = []
+
+        subject_attrs = {
+            "user_id": user.id,
+            "email": user.email,
+            "organization_id": user.organization_id,
+            "department_id": user.department_id,
+            "position": user.position.title if user.position else None,
+            "designation_type": getattr(user.position, "designation_type", None) if user.position else None,
+            "clearance_level": user.clearance_level,
+            "effective_clearance": cls.get_effective_clearance(user).value,
+            "is_admin": user.is_admin,
+            "is_active": user.is_active
+        }
+
+        # 1. Rule: User active check
+        rule_active = {
+            "rule": "SUBJECT_ACTIVE_CHECK",
+            "passed": user.is_active,
+            "details": "User account must be active"
+        }
+        rules_evaluated.append(rule_active)
+        if not user.is_active:
+            return {
+                "decision": "DENY",
+                "allowed": False,
+                "denial_reason": "User account is deactivated.",
+                "code": "USER_INACTIVE",
+                "subject_attributes": subject_attrs,
+                "evaluated_policies": rules_evaluated
+            }
+
+        # Superadmin bypass for global administration
+        if user.is_admin and action in [ActionType.READ.value, ActionType.WRITE.value, ActionType.UPDATE.value]:
+            rules_evaluated.append({
+                "rule": "ADMIN_OVERRIDE",
+                "passed": True,
+                "details": "System administrator bypass"
+            })
+            return {
+                "decision": "ALLOW",
+                "allowed": True,
+                "denial_reason": None,
+                "code": "ADMIN_PERMITTED",
+                "subject_attributes": subject_attrs,
+                "evaluated_policies": rules_evaluated
+            }
+
+        # 2. Rule: Position action capability
+        can_act = cls.can_perform_action(user, action)
+        rule_position = {
+            "rule": "POSITION_ACTION_CAPABILITY",
+            "passed": can_act,
+            "details": f"Position allows action '{action}'"
+        }
+        rules_evaluated.append(rule_position)
+        if not can_act:
+            return {
+                "decision": "DENY",
+                "allowed": False,
+                "denial_reason": f"Position '{user.position.title if user.position else 'Staff'}' lacks authority for action '{action}'.",
+                "code": "POSITION_ACTION_UNAUTHORIZED",
+                "subject_attributes": subject_attrs,
+                "evaluated_policies": rules_evaluated
+            }
+
+        # Resolve Target Resource Attributes
+        resource_attrs: Dict[str, Any] = {"type": resource_type, "id": resource_id}
+        target_classification = ClassificationLevel.UNCLASSIFIED.value
+        res_org_id = user.organization_id
+        res_dept_id = None
+        is_closed_or_archived = False
+
+        if resource_type == ResourceType.WORKSPACE.value and resource_id:
+            ws = db.query(Workspace).filter(Workspace.id == resource_id).first()
+            if ws:
+                res_org_id = ws.organization_id
+                res_dept_id = ws.department_id
+                target_classification = ws.classification
+                is_closed_or_archived = ws.is_closed
+                resource_attrs.update({
+                    "name": ws.name,
+                    "code": ws.code,
+                    "organization_id": ws.organization_id,
+                    "department_id": ws.department_id,
+                    "classification": ws.classification,
+                    "is_closed": ws.is_closed
+                })
+
+        elif resource_type == ResourceType.DOCUMENT.value and resource_id:
+            doc = db.query(Document).filter(Document.id == resource_id).first()
+            if doc:
+                res_org_id = doc.workspace.organization_id if doc.workspace else user.organization_id
+                res_dept_id = doc.workspace.department_id if doc.workspace else None
+                target_classification = doc.classification
+                is_closed_or_archived = (doc.status == DocumentStatus.ARCHIVED.value or doc.is_deleted)
+                resource_attrs.update({
+                    "title": doc.title,
+                    "document_number": doc.document_number,
+                    "classification": doc.classification,
+                    "status": doc.status,
+                    "workspace_id": doc.workspace_id,
+                    "is_deleted": doc.is_deleted
+                })
+
+        # 3. Rule: Organization boundary isolation
+        org_match = (user.organization_id == res_org_id) or user.is_admin
+        rule_tenant = {
+            "rule": "ORGANIZATION_TENANT_ISOLATION",
+            "passed": org_match,
+            "details": f"User org {user.organization_id} matches resource org {res_org_id}"
+        }
+        rules_evaluated.append(rule_tenant)
+        if not org_match:
+            return {
+                "decision": "DENY",
+                "allowed": False,
+                "denial_reason": "Cross-organization access is strictly forbidden by multi-tenant boundary policy.",
+                "code": "CROSS_TENANT_VIOLATION",
+                "subject_attributes": subject_attrs,
+                "resource_attributes": resource_attrs,
+                "evaluated_policies": rules_evaluated
+            }
+
+        # 4. Rule: Bell-LaPadula Security Clearance (with Temporary Clearance delegation check)
+        clearance_ok = cls.has_clearance(
+            db=db,
+            user=user,
+            target_classification=target_classification,
+            workspace_id=resource_id if resource_type == ResourceType.WORKSPACE.value else None,
+            document_id=resource_id if resource_type == ResourceType.DOCUMENT.value else None
+        )
+        rule_clearance = {
+            "rule": "SECURITY_CLEARANCE_POLICY",
+            "passed": clearance_ok,
+            "details": f"User clearance ({cls.get_effective_clearance(user).value}) meets required level ({target_classification})"
+        }
+        rules_evaluated.append(rule_clearance)
+        if not clearance_ok:
+            return {
+                "decision": "DENY",
+                "allowed": False,
+                "denial_reason": f"Clearance breach: Required classification is '{target_classification}', user holds '{cls.get_effective_clearance(user).value}'.",
+                "code": "CLEARANCE_INSUFFICIENT",
+                "subject_attributes": subject_attrs,
+                "resource_attributes": resource_attrs,
+                "evaluated_policies": rules_evaluated
+            }
+
+        # 5. Rule: Archival / Closed Resource Mutation Check
+        if is_closed_or_archived and action in [ActionType.WRITE.value, ActionType.UPDATE.value, ActionType.SIGN.value]:
+            rule_archival = {
+                "rule": "IMMUTABLE_LIFECYCLE_PROTECTION",
+                "passed": False,
+                "details": "Resource is closed or archived; mutations prohibited"
+            }
+            rules_evaluated.append(rule_archival)
+            return {
+                "decision": "DENY",
+                "allowed": False,
+                "denial_reason": "Cannot modify or sign a closed or archived resource.",
+                "code": "RESOURCE_SEALED",
+                "subject_attributes": subject_attrs,
+                "resource_attributes": resource_attrs,
+                "evaluated_policies": rules_evaluated
+            }
+
+        return {
+            "decision": "ALLOW",
+            "allowed": True,
+            "denial_reason": None,
+            "code": "ACCESS_GRANTED",
+            "subject_attributes": subject_attrs,
+            "resource_attributes": resource_attrs,
+            "evaluated_policies": rules_evaluated
+        }
+
+    @classmethod
     def authorize_workspace(
         cls,
         db: Session,
@@ -62,31 +293,18 @@ class AccessControlService:
         record_audit: bool = True
     ) -> bool:
         """Evaluates whether the user may access the specified workspace."""
-        # 1. Organization tenant isolation
-        if user.organization_id != workspace.organization_id and not user.is_admin:
+        eval_result = cls.evaluate_abac_policy(
+            db=db,
+            user=user,
+            action=action,
+            resource_type=ResourceType.WORKSPACE.value,
+            resource_id=workspace.id
+        )
+        if not eval_result["allowed"]:
             cls._reject_and_audit(
                 db, user, action, ResourceType.WORKSPACE.value, workspace.id,
-                f"Cross-organization access rejected: user org {user.organization_id} vs workspace org {workspace.organization_id}",
-                "CROSS_TENANT_VIOLATION", record_audit
+                eval_result["denial_reason"], eval_result["code"], record_audit
             )
-
-        # 2. Workspace security clearance
-        effective_clearance = cls.get_effective_clearance(user)
-        if not ClassificationLevel.can_access(effective_clearance, workspace.classification):
-            cls._reject_and_audit(
-                db, user, action, ResourceType.WORKSPACE.value, workspace.id,
-                f"Insufficient clearance: User has {effective_clearance.value}, workspace requires {workspace.classification}",
-                "CLEARANCE_INSUFFICIENT", record_audit
-            )
-
-        # 3. Position capabilities
-        if not cls.can_perform_action(user, action):
-            cls._reject_and_audit(
-                db, user, action, ResourceType.WORKSPACE.value, workspace.id,
-                f"Position '{user.position.title if user.position else 'None'}' does not hold '{action}' privileges",
-                "POSITION_PRIVILEGE_MISSING", record_audit
-            )
-
         return True
 
     @classmethod
@@ -98,28 +316,19 @@ class AccessControlService:
         action: str,
         record_audit: bool = True
     ) -> bool:
-        """Evaluates whether this person, in this position, may see or change this document."""
-        # Check workspace first
-        cls.authorize_workspace(db, user, document.workspace, action, record_audit=False)
-
-        # Document-specific classification check
-        effective_clearance = cls.get_effective_clearance(user)
-        if not ClassificationLevel.can_access(effective_clearance, document.classification):
+        """Evaluates whether this person, in this position, may access or alter this document."""
+        eval_result = cls.evaluate_abac_policy(
+            db=db,
+            user=user,
+            action=action,
+            resource_type=ResourceType.DOCUMENT.value,
+            resource_id=document.id
+        )
+        if not eval_result["allowed"]:
             cls._reject_and_audit(
                 db, user, action, ResourceType.DOCUMENT.value, document.id,
-                f"Document clearance violation: Document is classified '{document.classification}', "
-                f"but {user.full_name} ({user.position.title if user.position else 'Staff'}) holds '{effective_clearance.value}' clearance.",
-                "CLASSIFICATION_BREACH", record_audit
+                eval_result["denial_reason"], eval_result["code"], record_audit
             )
-
-        # Specific action check
-        if not cls.can_perform_action(user, action):
-            cls._reject_and_audit(
-                db, user, action, ResourceType.DOCUMENT.value, document.id,
-                f"Action '{action}' is not authorized for position '{user.position.title if user.position else 'Standard User'}'.",
-                "POSITION_ACTION_UNAUTHORIZED", record_audit
-            )
-
         return True
 
     @classmethod
