@@ -37,6 +37,29 @@ def get_password_hash(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8"), salt).decode("utf-8")
 
 
+def validate_password_complexity(password: str) -> tuple[bool, Optional[str]]:
+    """
+    Enforces strong password complexity standards:
+    - At least 8 characters
+    - At least 1 lowercase letter
+    - At least 1 uppercase letter
+    - At least 1 numerical digit
+    - At least 1 special character
+    """
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long."
+    if not any(c.islower() for c in password):
+        return False, "Password must contain at least one lowercase letter."
+    if not any(c.isupper() for c in password):
+        return False, "Password must contain at least one uppercase letter."
+    if not any(c.isdigit() for c in password):
+        return False, "Password must contain at least one numerical digit."
+    special_chars = "!@#$%^&*()-_=+[]{}|;:,.<>?/~`"
+    if not any(c in special_chars for c in password):
+        return False, "Password must contain at least one special character (!@#$%^&*...)."
+    return True, None
+
+
 def create_access_token(subject: Union[str, Any], expires_delta: Optional[timedelta] = None) -> str:
     """Creates a signed JSON Web Token for the user subject."""
     now = datetime.now(timezone.utc)

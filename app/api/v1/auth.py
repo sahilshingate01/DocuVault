@@ -5,6 +5,7 @@ from app.core.database import get_db
 from app.core.security import (
     verify_password,
     get_password_hash,
+    validate_password_complexity,
     create_access_token,
     create_refresh_token,
     decode_refresh_token,
@@ -14,7 +15,14 @@ from app.models.user import User
 from app.models.organization import Organization
 from app.models.department import Department
 from app.models.position import Position
-from app.schemas.auth import LoginRequest, RefreshTokenRequest, TokenRefreshResponse, UserRegisterRequest
+from app.schemas.auth import (
+    LoginRequest,
+    RefreshTokenRequest,
+    TokenRefreshResponse,
+    UserRegisterRequest,
+    ChangePasswordRequest,
+    ResetPasswordRequest,
+)
 from app.schemas.user import UserLoginResponse, UserResponse
 from app.api.deps import get_current_user
 from app.services.audit_service import AuditService
@@ -200,6 +208,73 @@ def logout(
         details={"email": current_user.email}
     )
     return {"message": "Logged out successfully. Tokens revoked."}
+
+
+@router.post("/change-password")
+def change_password(
+    request: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Secure password update requiring current password verification and complexity compliance."""
+    if not verify_password(request.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password verification failed."
+        )
+
+    is_valid, err_msg = validate_password_complexity(request.new_password)
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=err_msg
+        )
+
+    current_user.hashed_password = get_password_hash(request.new_password)
+    db.commit()
+
+    AuditService.record(
+        db=db,
+        action=ActionType.UPDATE.value,
+        resource_type=ResourceType.USER.value,
+        resource_id=current_user.id,
+        actor=current_user,
+        details={"action": "PASSWORD_CHANGED", "email": current_user.email}
+    )
+
+    return {"message": "Password changed successfully."}
+
+
+@router.post("/reset-password")
+def reset_password(
+    request: ResetPasswordRequest,
+    db: Session = Depends(get_db)
+):
+    """Administrative or authorized password reset flow."""
+    user = db.query(User).filter(User.email == request.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User account not found.")
+
+    is_valid, err_msg = validate_password_complexity(request.new_password)
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=err_msg
+        )
+
+    user.hashed_password = get_password_hash(request.new_password)
+    db.commit()
+
+    AuditService.record(
+        db=db,
+        action=ActionType.UPDATE.value,
+        resource_type=ResourceType.USER.value,
+        resource_id=user.id,
+        actor=user,
+        details={"action": "PASSWORD_RESET", "email": user.email}
+    )
+
+    return {"message": "Password reset successfully."}
 
 
 @router.get("/me", response_model=UserResponse)

@@ -29,6 +29,17 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    new_password: str
+    admin_token: Optional[str] = None
+
+
 class TokenRefreshResponse(BaseModel):
     access_token: str
     refresh_token: str
