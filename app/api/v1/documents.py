@@ -545,7 +545,7 @@ def unarchive_document(
     if not document:
         raise HTTPException(status_code=404, detail="Document not found.")
 
-    AccessControlService.authorize_document(db, current_user, document, ActionType.UPDATE.value)
+    AccessControlService.authorize_document(db, current_user, document, ActionType.READ.value)
 
     if document.status != DocumentStatus.ARCHIVED.value:
         raise HTTPException(status_code=400, detail="Document is not in ARCHIVED status.")
@@ -742,7 +742,7 @@ def restore_deleted_document(
     if not document:
         raise HTTPException(status_code=404, detail="Document not found.")
 
-    AccessControlService.authorize_document(db, current_user, document, ActionType.WRITE.value)
+    AccessControlService.authorize_document(db, current_user, document, ActionType.READ.value)
 
     if not document.is_deleted:
         raise HTTPException(status_code=400, detail="Document is not in trash.")
