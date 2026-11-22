@@ -48,6 +48,11 @@ uploads/
 *.swo
 .DS_Store
 
+# Node & Electron
+node_modules/
+desktop/node_modules/
+desktop/dist/
+
 # Pytest / Coverage
 .pytest_cache/
 .coverage

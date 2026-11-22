@@ -1,0 +1,27 @@
+{
+  "name": "docuvault-desktop",
+  "version": "1.0.0",
+  "description": "DocuVault - Secure Document Management System Desktop Client",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "keywords": [
+    "docuvault",
+    "security",
+    "document-management",
+    "digilocker",
+    "audit-ledger",
+    "cryptography",
+    "electron",
+    "desktop"
+  ],
+  "author": "DocuVault Team",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "electron": "^33.2.1"
+  }
+}
