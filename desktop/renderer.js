@@ -13,7 +13,7 @@ const PERSONAS = {
     name: "SP Vikram Sharma",
     title: "Superintendent of Police",
     clearance: "TOP_SECRET",
-    badgeClass: "badge-top-secret"
+    badgeClass: "stamp-top-secret"
   },
   si: {
     email: "arjun.das@police.gov.in",
@@ -21,7 +21,7 @@ const PERSONAS = {
     name: "Sub-Inspector Arjun Das",
     title: "Investigating Officer",
     clearance: "CONFIDENTIAL",
-    badgeClass: "badge-confidential"
+    badgeClass: "stamp-confidential"
   },
   judge: {
     email: "sneha.kulkarni@judiciary.gov.in",
@@ -29,7 +29,7 @@ const PERSONAS = {
     name: "Hon. Judge Sneha Kulkarni",
     title: "Principal District Judge",
     clearance: "TOP_SECRET",
-    badgeClass: "badge-top-secret"
+    badgeClass: "stamp-top-secret"
   },
   clerk: {
     email: "manoj.verma@judiciary.gov.in",
@@ -37,7 +37,7 @@ const PERSONAS = {
     name: "Manoj Verma",
     title: "Court Record Clerk",
     clearance: "RESTRICTED",
-    badgeClass: "badge-restricted"
+    badgeClass: "stamp-restricted"
   },
   ceo: {
     email: "siddharth@apexcorp.com",
@@ -45,7 +45,7 @@ const PERSONAS = {
     name: "Siddharth Singhania",
     title: "Chief Executive Officer",
     clearance: "TOP_SECRET",
-    badgeClass: "badge-top-secret"
+    badgeClass: "stamp-top-secret"
   },
   analyst: {
     email: "riya.sen@apexcorp.com",
@@ -53,7 +53,7 @@ const PERSONAS = {
     name: "Riya Sen",
     title: "Junior Analyst",
     clearance: "UNCLASSIFIED",
-    badgeClass: "badge-unclassified"
+    badgeClass: "stamp-unclassified"
   }
 };
 
@@ -70,7 +70,7 @@ function showToast(message, type = "success") {
   const container = document.getElementById("toastContainer");
   if (!container) return;
   const toast = document.createElement("div");
-  toast.className = `toast toast-${type}`;
+  toast.className = `cobalt-toast cobalt-toast--${type === "warning" ? "warn" : type}`;
   toast.innerHTML = `<span>${type === "success" ? "✓" : type === "error" ? "⚠️" : "ℹ️"}</span> <span>${message}</span>`;
   container.appendChild(toast);
   setTimeout(() => {
@@ -106,7 +106,7 @@ async function authenticatePersona(key) {
     document.getElementById("activeUserName").textContent = p.name;
     const badge = document.getElementById("activeUserClearance");
     badge.textContent = p.clearance.replace("_", " ");
-    badge.className = `badge-tier ${p.badgeClass}`;
+    badge.className = `stamp-clearance ${p.badgeClass}`;
 
     showToast(`Switched persona to ${p.name} (${p.clearance})`, "success");
 
@@ -129,21 +129,21 @@ async function checkBackendConnectivity() {
     if (window.docuvaultNative && window.docuvaultNative.getBackendStatus) {
       const status = await window.docuvaultNative.getBackendStatus();
       if (status.healthy) {
-        dot.className = "status-dot";
+        dot.className = "pulse-dot";
         text.textContent = `Online (${status.managed ? "PID " + status.pid : "Port 8000"})`;
         return true;
       }
     } else {
       const res = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(1200) });
       if (res.ok) {
-        dot.className = "status-dot";
+        dot.className = "pulse-dot";
         text.textContent = "127.0.0.1:8000";
         return true;
       }
     }
   } catch (e) {}
 
-  dot.className = "status-dot disconnected";
+  dot.className = "pulse-dot disconnected";
   text.textContent = "Offline (Click to restart)";
   return false;
 }
@@ -152,7 +152,7 @@ async function checkBackendConnectivity() {
 // Navigation
 // =============================================================================
 function setupNavigation() {
-  const navBtns = document.querySelectorAll(".nav-btn");
+  const navBtns = document.querySelectorAll(".sidebar-item");
   navBtns.forEach((btn) => {
     btn.addEventListener("click", () => {
       navBtns.forEach((b) => b.classList.remove("active"));
@@ -192,7 +192,7 @@ function refreshPane(paneId) {
 }
 
 async function refreshActiveViewData() {
-  const activeBtn = document.querySelector(".nav-btn.active");
+  const activeBtn = document.querySelector(".sidebar-item.active") || document.querySelector(".nav-btn.active");
   const paneId = activeBtn ? activeBtn.getAttribute("data-pane") : "workspaces";
   await refreshPane(paneId);
   await verifyLedgerStatusBadge();
@@ -234,33 +234,33 @@ async function loadWorkspaces() {
     }
 
     grid.innerHTML = cachedWorkspaces.map((ws) => {
-      const tierClass = `badge-${ws.classification.toLowerCase().replace("_", "-")}`;
+      const tierClass = `stamp-${ws.classification.toLowerCase().replace("_", "-")}`;
       return `
-        <div class="vault-card">
-          <div class="vault-card-header">
+        <div class="cut-card workspace-card">
+          <div class="workspace-card-header">
             <div>
-              <div class="vault-card-title">${ws.name}</div>
-              <div class="vault-card-code">${ws.code}</div>
+              <div class="ws-title">${ws.name}</div>
+              <div class="ws-code">${ws.code}</div>
             </div>
-            <span class="badge-tier ${tierClass}">${ws.classification}</span>
+            <span class="stamp-clearance ${tierClass}">${ws.classification}</span>
           </div>
-          <div style="font-size: 12px; color: var(--text-muted); min-height: 36px;">
+          <div style="font-size: 12px; color: var(--color-muted); min-height: 36px;">
             ${ws.description || "Secure workspace boundary"}
           </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 10px; font-size: 11px; color: var(--text-dim);">
+          <div class="ws-stats">
             <span>📁 ${ws.document_count || 0} Documents</span>
-            <button class="btn-desk btn-desk-secondary" style="padding: 3px 8px; font-size: 11px;" onclick="openWorkspaceFilter('${ws.id}')">View Docs</button>
+            <button class="key key--sm" onclick="openWorkspaceFilter('${ws.id}')">View Docs</button>
           </div>
         </div>
       `;
     }).join("");
   } catch (err) {
-    grid.innerHTML = `<div style="color: var(--accent-red); padding: 20px;">Error: ${err.message}</div>`;
+    grid.innerHTML = `<div style="color: var(--color-error); padding: 20px;">Error: ${err.message}</div>`;
   }
 }
 
 window.openWorkspaceFilter = function(wsId) {
-  document.querySelector('.nav-btn[data-pane="documents"]').click();
+  document.querySelector('.sidebar-item[data-pane="documents"]').click();
 };
 
 // =============================================================================
@@ -315,14 +315,14 @@ async function loadDocuments() {
             <div style="font-weight: 600;">${doc.title}</div>
             <div style="font-size: 11px; color: var(--text-dim);">v${verNum} • ${fileSizeKb} KB</div>
           </td>
-          <td style="font-size: 12px; color: var(--text-muted);">${wsName}</td>
-          <td><span class="badge-tier ${tierClass}">${doc.classification}</span></td>
+          <td style="font-size: 12px; color: var(--color-muted);">${wsName}</td>
+          <td><span class="stamp-clearance ${tierClass}">${doc.classification}</span></td>
           <td>${statusBadge}</td>
-          <td><span class="hash-cell selectable" title="${sha256}">${sha256}</span></td>
+          <td><span class="hash-pill" title="${sha256}">${sha256}</span></td>
           <td>
             <div style="display: flex; gap: 6px;">
-              <button class="btn-desk btn-desk-secondary" style="padding: 3px 8px; font-size: 11px;" onclick="verifyDocIntegrity('${doc.id}')">Verify</button>
-              <button class="btn-desk btn-desk-primary" style="padding: 3px 8px; font-size: 11px;" onclick="downloadDoc('${doc.id}', '${doc.title}')">Download</button>
+              <button class="key key--sm" onclick="verifyDocIntegrity('${doc.id}')">Verify</button>
+              <button class="key key--primary key--sm" onclick="downloadDoc('${doc.id}', '${doc.title}')">Download</button>
             </div>
           </td>
         </tr>
@@ -537,24 +537,24 @@ async function loadSignatures() {
     }
 
     container.innerHTML = sigList.map((s) => `
-      <div class="vault-card">
-        <div class="vault-card-header">
+      <div class="cut-card" style="padding: var(--space-md); display: flex; flex-direction: column; gap: var(--space-sm);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
           <div>
-            <div class="vault-card-title">${s.document_title || "Document"}</div>
-            <div class="vault-card-code">Doc ID: ${s.document_id}</div>
+            <div style="font-family: var(--font-display); font-weight: 600; font-size: 15px;">${s.document_title || "Document"}</div>
+            <div class="mono" style="font-size: 11px; color: var(--color-muted);">Doc ID: ${s.document_id}</div>
           </div>
-          <span class="badge-tier badge-secret">RSA-PSS SIGNED</span>
+          <span class="stamp-clearance stamp-secret">RSA-PSS SIGNED</span>
         </div>
-        <div style="font-size: 12px; color: var(--text-muted); display: flex; flex-direction: column; gap: 4px;">
-          <div>Signed By: <strong>${s.signer_name || s.signer_id}</strong> (${s.signer_position || "Authorized Officer"})</div>
+        <div style="font-size: 12px; color: var(--color-muted); display: flex; flex-direction: column; gap: 4px;">
+          <div>Signed By: <strong style="color: var(--color-ink);">${s.signer_name || s.signer_id}</strong> (${s.signer_position || "Authorized Officer"})</div>
           <div>Timestamp: <strong>${new Date(s.signed_at).toLocaleString()}</strong></div>
           <div style="margin-top: 6px;">
-            <span style="font-size: 11px; color: var(--text-dim);">Signature Fingerprint:</span>
-            <div class="hash-cell selectable" style="max-width: 100%;">${s.signature || s.signature_hash || "RSA-PSS-2048-VALID"}</div>
+            <span style="font-size: 11px; color: var(--color-muted);">Signature Digest:</span>
+            <div class="hash-pill" style="max-width: 100%;">${s.signature || s.signature_hash || "RSA-PSS-2048-VALID"}</div>
           </div>
         </div>
-        <div style="border-top: 1px solid var(--border-color); padding-top: 10px; display: flex; justify-content: flex-end;">
-          <button class="btn-desk btn-desk-success" style="padding: 4px 10px; font-size: 11px;" onclick="verifySignatureProof('${s.id}')">✓ Verify Certificate</button>
+        <div style="border-top: 1px solid var(--color-rule); padding-top: 10px; display: flex; justify-content: flex-end;">
+          <button class="key key--primary key--sm" onclick="verifySignatureProof('${s.id}')">✓ Verify Certificate</button>
         </div>
       </div>
     `).join("");
@@ -606,17 +606,17 @@ async function loadAuditLedger() {
 
     tbody.innerHTML = blocks.map((b) => `
       <tr>
-        <td style="font-family: var(--font-mono); font-weight: 700; color: #93c5fd;">#${b.block_index !== undefined ? b.block_index : b.id}</td>
-        <td style="font-size: 12px; color: var(--text-dim);">${new Date(b.timestamp).toLocaleString()}</td>
+        <td style="font-family: var(--font-mono); font-weight: 700; color: var(--color-accent);">#${b.sequence_number !== undefined ? b.sequence_number : (b.block_index !== undefined ? b.block_index : b.id)}</td>
+        <td style="font-size: 12px; color: var(--color-muted);">${new Date(b.timestamp).toLocaleString()}</td>
         <td style="font-weight: 600;">${b.actor_name || b.actor_id || "System"}</td>
-        <td><span class="badge-tier" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;">${b.action}</span></td>
-        <td><span class="hash-cell selectable" title="${b.previous_hash}">${b.previous_hash || "GENESIS_BLOCK"}</span></td>
-        <td><span class="hash-cell selectable" title="${b.entry_hash || b.current_hash}">${b.entry_hash || b.current_hash}</span></td>
-        <td><span style="color: var(--accent-green); font-weight: 600; font-size: 12px;">● Chained</span></td>
+        <td><span class="tag-cobalt">${b.action}</span></td>
+        <td><span class="hash-pill" title="${b.previous_hash}">${b.previous_hash || "GENESIS_BLOCK"}</span></td>
+        <td><span class="hash-pill" title="${b.entry_hash || b.current_hash}">${b.entry_hash || b.current_hash}</span></td>
+        <td><span style="color: var(--color-success); font-weight: 600; font-size: 12px;">● Chained</span></td>
       </tr>
     `).join("");
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="7" style="color: var(--accent-red); padding: 24px;">Error: ${err.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="color: var(--color-error); padding: 24px;">Error: ${err.message}</td></tr>`;
   }
 }
 
@@ -629,14 +629,14 @@ async function verifyLedgerStatusBadge() {
     if (res.ok) {
       const result = await res.json();
       if (result.is_valid || result.valid) {
-        badge.className = "chain-health-pill";
+        badge.className = "sgc-badge";
         badge.textContent = `● Chain Pristine (${result.total_records || result.total_blocks || "Verified"})`;
         return;
       }
     }
   } catch (e) {}
 
-  badge.className = "chain-health-pill tampered";
+  badge.className = "sgc-badge tampered";
   badge.textContent = "⚠️ Chain Tampered";
 }
 
@@ -827,25 +827,25 @@ async function loadOrganizations() {
     const list = orgs.items || orgs;
 
     container.innerHTML = list.map((org) => `
-      <div class="vault-card">
-        <div class="vault-card-header">
+      <div class="cut-card" style="padding: var(--space-md); display: flex; flex-direction: column; gap: var(--space-sm);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
           <div>
-            <div class="vault-card-title">${org.name}</div>
-            <div class="vault-card-code">${org.code} • ${org.domain || "Enterprise Org"}</div>
+            <div style="font-family: var(--font-display); font-weight: 600; font-size: 15px;">${org.name}</div>
+            <div class="mono" style="font-size: 11px; color: var(--color-muted);">${org.code || "ORG"} • ${org.domain || "Enterprise Org"}</div>
           </div>
-          <span class="badge-tier badge-confidential">ORGANIZATION</span>
+          <span class="stamp-clearance stamp-confidential">ORGANIZATION</span>
         </div>
-        <div style="font-size: 12px; color: var(--text-muted);">
+        <div style="font-size: 12px; color: var(--color-muted);">
           ${org.description || "Multi-tenant tenant organization with isolated departments."}
         </div>
-        <div style="border-top: 1px solid var(--border-color); padding-top: 10px; font-size: 11px; color: var(--text-dim); display: flex; justify-content: space-between;">
-          <span>Departments: <strong>${org.department_count || "Configured"}</strong></span>
-          <span>Users: <strong>${org.user_count || "Active"}</strong></span>
+        <div style="border-top: 1px solid var(--color-rule); padding-top: 10px; font-size: 11px; color: var(--color-muted); display: flex; justify-content: space-between;">
+          <span>Departments: <strong style="color: var(--color-ink);">${org.department_count || "Configured"}</strong></span>
+          <span>Users: <strong style="color: var(--color-ink);">${org.user_count || "Active"}</strong></span>
         </div>
       </div>
     `).join("");
   } catch (err) {
-    container.innerHTML = `<div style="color: var(--accent-red); padding: 20px;">Error: ${err.message}</div>`;
+    container.innerHTML = `<div style="color: var(--color-error); padding: 20px;">Error: ${err.message}</div>`;
   }
 }
 
@@ -861,29 +861,29 @@ async function loadSecuritySOC() {
     if (res.ok) {
       const data = await res.json();
       metricsGrid.innerHTML = `
-        <div class="vault-card">
-          <div class="vault-card-title">Clearance Enforcements</div>
-          <div style="font-size: 28px; font-weight: 700; color: #60a5fa;">${data.total_evaluations || 142}</div>
-          <div style="font-size: 11px; color: var(--text-dim);">No-read-up Bell-LaPadula rules evaluated</div>
+        <div class="cut-card" style="padding: var(--space-md);">
+          <div style="font-family: var(--font-display); font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--color-muted); letter-spacing: 0.05em;">Clearance Enforcements</div>
+          <div style="font-family: var(--font-display); font-size: 32px; font-weight: 600; color: var(--color-accent);">${data.total_evaluations || 142}</div>
+          <div style="font-size: 11px; color: var(--color-muted);">No-read-up Bell-LaPadula rules evaluated</div>
         </div>
-        <div class="vault-card">
-          <div class="vault-card-title">Denied Access Attempts</div>
-          <div style="font-size: 28px; font-weight: 700; color: var(--accent-red);">${data.denied_attempts || 3}</div>
-          <div style="font-size: 11px; color: var(--text-dim);">Unauthorized clearance breaches blocked</div>
+        <div class="cut-card" style="padding: var(--space-md);">
+          <div style="font-family: var(--font-display); font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--color-muted); letter-spacing: 0.05em;">Denied Access Attempts</div>
+          <div style="font-family: var(--font-display); font-size: 32px; font-weight: 600; color: var(--color-error);">${data.denied_attempts || 3}</div>
+          <div style="font-size: 11px; color: var(--color-muted);">Unauthorized clearance breaches blocked</div>
         </div>
-        <div class="vault-card">
-          <div class="vault-card-title">Cryptographic Integrity</div>
-          <div style="font-size: 28px; font-weight: 700; color: var(--accent-green);">100%</div>
-          <div style="font-size: 11px; color: var(--text-dim);">SHA-256 vault fingerprint consistency</div>
+        <div class="cut-card" style="padding: var(--space-md);">
+          <div style="font-family: var(--font-display); font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--color-muted); letter-spacing: 0.05em;">Cryptographic Integrity</div>
+          <div style="font-family: var(--font-display); font-size: 32px; font-weight: 600; color: var(--color-success);">100%</div>
+          <div style="font-size: 11px; color: var(--color-muted);">SHA-256 vault fingerprint consistency</div>
         </div>
       `;
     }
   } catch (e) {
     metricsGrid.innerHTML = `
-      <div class="vault-card">
-        <div class="vault-card-title">SOC Status</div>
-        <div style="font-size: 18px; color: var(--accent-green); font-weight: 700;">● Continuous Monitoring Active</div>
-        <div style="font-size: 11px; color: var(--text-dim);">ABAC attribute telemetry running</div>
+      <div class="cut-card" style="padding: var(--space-md);">
+        <div style="font-family: var(--font-display); font-size: 14px; font-weight: 600;">SOC Status</div>
+        <div style="font-size: 16px; color: var(--color-success); font-weight: 600; margin-top: 4px;">● Continuous Monitoring Active</div>
+        <div style="font-size: 11px; color: var(--color-muted);">ABAC attribute telemetry running</div>
       </div>
     `;
   }
@@ -1092,28 +1092,28 @@ function setupNativeBridgeEvents() {
           document.getElementById("btnNewWorkspace").click();
           break;
         case "open-local-verifier":
-          document.querySelector('.nav-btn[data-pane="verifier"]').click();
+          (document.querySelector('.sidebar-item[data-pane="verifier"]') || document.querySelector('.nav-btn[data-pane="verifier"]'))?.click();
           break;
         case "verify-ledger":
-          document.querySelector('.nav-btn[data-pane="audit"]').click();
+          (document.querySelector('.sidebar-item[data-pane="audit"]') || document.querySelector('.nav-btn[data-pane="audit"]'))?.click();
           setTimeout(() => document.getElementById("btnVerifyChain").click(), 200);
           break;
         case "simulate-tamper":
-          document.querySelector('.nav-btn[data-pane="audit"]').click();
+          (document.querySelector('.sidebar-item[data-pane="audit"]') || document.querySelector('.nav-btn[data-pane="audit"]'))?.click();
           setTimeout(() => document.getElementById("btnSimulateTamper").click(), 200);
           break;
         case "restore-ledger":
-          document.querySelector('.nav-btn[data-pane="audit"]').click();
+          (document.querySelector('.sidebar-item[data-pane="audit"]') || document.querySelector('.nav-btn[data-pane="audit"]'))?.click();
           setTimeout(() => document.getElementById("btnRestoreChain").click(), 200);
           break;
         case "refresh-vault":
           refreshActiveViewData();
           break;
         case "open-abac":
-          document.querySelector('.nav-btn[data-pane="security"]').click();
+          (document.querySelector('.sidebar-item[data-pane="security"]') || document.querySelector('.nav-btn[data-pane="security"]'))?.click();
           break;
         case "open-soc":
-          document.querySelector('.nav-btn[data-pane="security"]').click();
+          (document.querySelector('.sidebar-item[data-pane="security"]') || document.querySelector('.nav-btn[data-pane="security"]'))?.click();
           break;
         case "persona-sp":
           document.getElementById("personaSelect").value = "sp";
@@ -1152,6 +1152,10 @@ function setupNativeBridgeEvents() {
 // App Initialization
 // =============================================================================
 window.addEventListener("DOMContentLoaded", async () => {
+  if (typeof window.initCobaltField === "function") {
+    window.initCobaltField("cobaltFieldCanvas");
+  }
+
   setupNavigation();
   setupLocalVerifier();
   setupAuditLedgerActions();
