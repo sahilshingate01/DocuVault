@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocuVault - DBMS Viva Presentation Slides & Teleprompter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #121826;
+      --border: #232d42;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --text: #f3f4f6;
+      --muted: #9ca3af;
+      --error: #ef4444;
+      --success: #10b981;
+      --warn: #f59e0b;
+      --font-display: "Familjen Grotesk", sans-serif;
+      --font-body: "IBM Plex Sans", sans-serif;
+      --font-mono: "JetBrains Mono", monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .logo {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .timer-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #060911;
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .timer-display {
+      font-family: var(--font-mono);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--success);
+    }
+    .timer-display.warn { color: var(--warn); }
+    .timer-display.danger { color: var(--error); animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .timer-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .timer-btn:hover { background: var(--border); }
+
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .btn-sec {
+      background: var(--border);
+    }
+    .btn:hover { opacity: 0.9; }
+
+    main {
+      flex: 1;
+      padding: 32px 48px;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .slide { display: none; }
+    .slide.active { display: flex; flex-direction: column; gap: 20px; animation: fadeIn 0.2s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    .slide-badge {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      width: fit-content;
+      font-weight: 600;
+    }
+    .badge-q1 { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6; }
+    .badge-q2 { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
+    .badge-q3 { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b; }
+    .badge-q4 { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
+    .badge-q5 { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid #a855f7; }
+
+    .slide-title {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .slide-subtitle {
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .slide-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .card h3 {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      margin-bottom: 10px;
+      color: #93c5fd;
+    }
+    .card ul {
+      margin-left: 20px;
+      line-height: 1.6;
+      font-size: 0.9rem;
+      color: #d1d5db;
+    }
+    .card code {
+      font-family: var(--font-mono);
+      background: #060911;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-size: 0.85rem;
+      color: #38bdf8;
+    }
+    .teleprompter-box {
+      background: #060911;
+      border: 1px solid #1e293b;
+      border-left: 4px solid var(--accent);
+      border-radius: 6px;
+      padding: 16px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: #e2e8f0;
+    }
+    .teleprompter-box strong { color: #60a5fa; }
+    .teleprompter-cue {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: #fbbf24;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    footer {
+      background: var(--card-bg);
+      border-top: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .dots {
+      display: flex;
+      gap: 6px;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      cursor: pointer;
+    }
+    .dot.active { background: var(--accent); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <span>🛡️ DocuVault</span>
+      <span style="font-size: 0.8rem; font-weight: 500; color: var(--muted);">| DBMS Viva Teleprompter & Slides</span>
+    </div>
+
+    <div class="timer-container">
+      <span style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; font-family: var(--font-mono);">Recording Timer:</span>
+      <span id="timerDisplay" class="timer-display">00:00</span>
+      <button id="btnTimerToggle" class="timer-btn">Start</button>
+      <button id="btnTimerReset" class="timer-btn">Reset</button>
+      <span style="font-size: 0.75rem; color: var(--muted);">(Max 10:00)</span>
+    </div>
+
+    <div class="nav-controls">
+      <button id="btnPrev" class="btn btn-sec">◀ Prev</button>
+      <span id="slideIndicator" style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--muted);">1 / 6</span>
+      <button id="btnNext" class="btn">Next ▶</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Slide 0: Introduction -->
+    <section class="slide active" data-index="0">
+      <span class="slide-badge badge-q1">Introduction (0:00 – 0:45)</span>
+      <h1 class="slide-title">DocuVault — Secure Document Management System</h1>
+      <p class="slide-subtitle">Data Engineering Major Project DBMS Viva Video Presentation</p>
+
+      <div class="slide-grid">
+        <div class="card">
+          <h3>Problem Statement</h3>
+          <ul>
+            <li>Organisations keep sensitive files in unverified shared drives and paper attachments.</li>
+            <li>In a police station or court, a changed statement alters a trial verdict.</li>
+            <li>In an enterprise, a leaked contract causes irreparable harm.</li>
+            <li><strong>Solution:</strong> DigiLocker-grade vault with SHA-256 fingerprinting, clearance gates, RSA signatures, and hash-chained audit trails.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Viva Outline</h3>
+          <ul>
+            <li><strong>Q1:</strong> Database Selection & Workload Profiles (RDBMS vs NoSQL)</li>
+            <li><strong>Q2:</strong> Schema Architecture & 6-Table Relational Join Walkthrough</li>
+            <li><strong>Q3:</strong> 3NF / BCNF Normalization & Controlled Denormalization</li>
+            <li><strong>Q4:</strong> Integrity Constraints, Atomicity & Extra Credit Rejection</li>
+            <li><strong>Q5:</strong> B-Tree Indexes, EXPLAIN QUERY PLAN & 100x Scaling</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="teleprompter-box">
+        <div class="teleprompter-cue">▶ Spoken Script (Say this now):</div>
+        "Hello professors and evaluators. My name is [Your Name], and this is my individual video presentation for the Data Engineering Major Project DBMS Viva. My project is DocuVault, a secure, DigiLocker-grade document management and cryptographic provenance system. In real-world institutions like police stations, courts, and corporate enterprises, sensitive documents are often stored in unverified shared drives. In a criminal trial, a tampered statement can alter a verdict; in an enterprise, a leaked contract causes real harm. DocuVault solves this through strict relational governance, SHA-256 fingerprinting, and an immutable hash-chained audit ledger."
+      </div>
+    </section>
+
+    <!-- Slide 1: Q1 -->
+    <section class="slide" data-index="1">
+      <span class="slide-badge badge-q1">Question 1 (0:45 – 2:15)</span>
+      <h1 class="slide-title">Why Did You Choose This Database?</h1>
+      <p class="slide-subtitle">Relational RDBMS with ACID vs Document Store Evaluation</p>
+
+      <div class="slide-grid">
+        <div class="card">
+          <h3>Database Architecture</h3>
+          <ul>
+            <li><strong>Type:</strong> Relational Database Management System (RDBMS)</li>
+            <li><strong>Engines:</strong> SQLite 3.x with WAL Mode (Edge Vault) & PostgreSQL (Enterprise)</li>
+            <li><strong>Data Shape:</strong> Structured multi-tenant hierarchy (Orgs ➔ Depts ➔ Positions ➔ Users ➔ Workspaces ➔ Documents ➔ Versions ➔ Signatures)</li>
+            <li><strong>Read/Write Ratio:</strong> ~80% Reads (Verification, Search) : 20% Writes (Atomic Uploads)</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Consistency & Rejected Alternative</h3>
+          <ul>
+            <li><strong>Consistency:</strong> Strict Immediate Consistency (Serializable / Read Committed). Eventual consistency is unacceptable in criminal evidence.</li>
+            <li><strong>Rejected Alternative:</strong> <code>MongoDB / NoSQL Document Store</code></li>
+            <li><strong>Why Rejected:</strong> No native cascading foreign keys; eventual consistency risks clearance leaks; lack of hardware-guaranteed hash-chain ordering across separate collections without heavy two-phase commits.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="teleprompter-box">
+        <div class="teleprompter-cue">▶ Spoken Script & Screen Action:</div>
+        "For DocuVault, we chose a Relational Database Management System (RDBMS), specifically SQLite 3 with Write-Ahead Logging and PostgreSQL. Our data is highly structured and relational. As you can see on screen in our table inventory, our workload is read-heavy: roughly 80% reads and 20% writes. We require strict immediate consistency with ACID guarantees. In court evidence, eventual consistency is unacceptable. We considered MongoDB, but rejected it because it lacks native cascading foreign keys and cannot guarantee ordered hash-chain serialization across collections without heavy two-phase commit overhead."
+      </div>
+    </section>
+
+    <!-- Slide 2: Q2 -->
+    <section class="slide" data-index="2">
+      <span class="slide-badge badge-q2">Question 2 (2:15 – 4:00)</span>
+      <h1 class="slide-title">Walk Us Through Your Schema or Data Model</h1>
+      <p class="slide-subtitle">11 Relational Tables, Foreign Key Cascades & Resolved M:N Relationships</p>
+
+      <div class="slide-grid">
+        <div class="card">
+          <h3>Entity Relationships</h3>
+          <ul>
+            <li><strong>1:N Relationships:</strong>
+              <br>• Organization ➔ Departments & Workspaces
+              <br>• Department ➔ Positions & Users
+              <br>• Workspace ➔ Documents (case container)
+              <br>• Document ➔ DocumentVersions (file history)
+            </li>
+            <li><strong>M:N Resolutions:</strong>
+              <br>• Users ↔ Versions resolved via <code>digital_signatures</code> & <code>chain_of_custody</code>
+              <br>• Users ↔ Workspaces resolved via <code>temporary_clearances</code>
+            </li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Referential Integrity</h3>
+          <ul>
+            <li><code>ON DELETE CASCADE</code>: Deleting a workspace removes child documents, versions, and signatures.</li>
+            <li><code>ON DELETE SET NULL</code>: Deleting or archiving a user retains audit logs and evidence history with null actor pointers.</li>
+            <li><strong>Live Query:</strong> Multi-table join across 6 normalized entities connecting documents to uploaded officer and signature.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="teleprompter-box">
+        <div class="teleprompter-cue">▶ Spoken Script & Action: [CLICK 'Run 6-Table JOIN' in DBMS Studio]</div>
+        "Our database consists of 11 normalized tables. We enforce strict foreign key constraints: ON DELETE CASCADE for child document versions and digital signatures, and ON DELETE SET NULL on user references so historical audit trails remain intact even if staff is archived. Many-to-Many relationships between Users and Document Versions are resolved through our digital_signatures associative entity. Notice on screen: I am executing our 6-table relational JOIN query, which connects documents, workspaces, document versions, users, positions, and signatures in a single unified view."
+      </div>
+    </section>
+
+    <!-- Slide 3: Q3 -->
+    <section class="slide" data-index="3">
+      <span class="slide-badge badge-q3">Question 3 (4:00 – 5:30)</span>
+      <h1 class="slide-title">Normal Forms & Controlled Denormalization</h1>
+      <p class="slide-subtitle">3NF / BCNF Decomposition Proofs & Audit Log Historical Snapshot</p>
+
+      <div class="slide-grid">
+        <div class="card">
+          <h3>Normalization Decomposition</h3>
+          <ul>
+            <li><strong>1NF:</strong> Unique surrogate UUID keys; atomic scalar attributes; no repeating groups.</li>
+            <li><strong>2NF:</strong> 1NF + zero partial key dependencies on UUID keys.</li>
+            <li><strong>3NF:</strong> 2NF + zero transitive dependencies ($X \to Y \to Z$ removed; Users store <code>position_id</code>, not position title).</li>
+            <li><strong>BCNF:</strong> In <code>documents</code>, all determinants (<code>id</code>, <code>document_number</code>) are candidate keys.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Controlled Denormalization</h3>
+          <ul>
+            <li><strong>Table:</strong> <code>audit_logs</code> stores <code>user_name</code>, <code>user_email</code>, <code>user_position</code> alongside <code>user_id</code>.</li>
+            <li><strong>Why:</strong> Forensic non-repudiation! If an officer changes rank or is deleted 5 years later, a dynamic join would corrupt historical court evidence!</li>
+            <li><strong>Maintenance:</strong> Audit log is strictly append-only; snapshot is sealed inside the SHA-256 block upon insertion.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="teleprompter-box">
+        <div class="teleprompter-cue">▶ Spoken Script:</div>
+        "Our design reaches Third Normal Form (3NF) and BCNF. All attributes are atomic, and by using single-column surrogate UUIDs, we eliminate all partial dependencies. Transitive dependencies are removed: the Users table stores position_id and department_id rather than department names. We deliberately introduced controlled denormalization in our audit_logs table by storing snapshots of user names and positions alongside user_id. Why? Because in a court inquiry years later, if an employee is deleted or reassigned, a dynamic join would corrupt historical evidence! Correctness is maintained because audit logs are strictly append-only and sealed in the SHA-256 chain."
+      </div>
+    </section>
+
+    <!-- Slide 4: Q4 -->
+    <section class="slide" data-index="4">
+      <span class="slide-badge badge-q4">Question 4 (5:30 – 7:15)</span>
+      <h1 class="slide-title">Data Correctness, Constraints & Transactions</h1>
+      <p class="slide-subtitle">ACID Atomic Pipeline & Live Constraint Rejection (Extra Credit)</p>
+
+      <div class="slide-grid">
+        <div class="card">
+          <h3>Integrity Constraints</h3>
+          <ul>
+            <li><strong>NOT NULL:</strong> <code>document_number</code>, <code>sha256_hash</code>, <code>email</code>, <code>entry_hash</code></li>
+            <li><strong>UNIQUE:</strong> <code>documents.document_number</code>, <code>users.email</code>, <code>workspaces.code</code></li>
+            <li><strong>Database vs App Division:</strong> Database enforces referential integrity and uniqueness; Application enforces Bell-LaPadula clearance rules and RSA cryptographic signatures.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Atomic Transactions & Extra Credit</h3>
+          <ul>
+            <li><strong>Atomic Pipeline:</strong> Upload commits [Document] + [Version] + [AuditLog] simultaneously.</li>
+            <li><strong>Rollback Safety:</strong> If audit chaining fails, the entire transaction rolls back with 0 orphaned records.</li>
+            <li><strong>EXTRA CREDIT DEMO:</strong> Triggering duplicate <code>document_number</code> produces <code>UNIQUE constraint failed</code> exception caught live!</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="teleprompter-box">
+        <div class="teleprompter-cue">▶ Spoken Script & Action: [CLICK 'Test Atomic Rollback', then CLICK 'Trigger Constraint (Extra Credit)']</div>
+        "Our database enforces strict NOT NULL, UNIQUE, and foreign key constraints. The document upload operation executes as an atomic multi-table transaction committing the Document, Document Version, and hash-chained Audit Log together. If any step fails, everything is rolled back via db.rollback(). Now for our EXTRA CREDIT demonstration: I will trigger a database constraint violation on screen by attempting to insert a duplicate document number. As shown in red on screen: the SQLite kernel immediately rejects the write with 'UNIQUE constraint failed: documents.document_number' and rolls back the transaction, preserving data correctness."
+      </div>
+    </section>
+
+    <!-- Slide 5: Q5 -->
+    <section class="slide" data-index="5">
+      <span class="slide-badge badge-q5">Question 5 (7:15 – 9:00)</span>
+      <h1 class="slide-title">Database Efficiency, Indexes & 100x Scaling Strategy</h1>
+      <p class="slide-subtitle">B-Tree Indexes, EXPLAIN QUERY PLAN & Enterprise Scale Architecture</p>
+
+      <div class="slide-grid">
+        <div class="card">
+          <h3>Indexes Created & Rejected</h3>
+          <ul>
+            <li><strong>Active B-Tree Indexes:</strong>
+              <br>• <code>ix_document_versions_sha256_hash</code> ($O(\log N)$ file verification)
+              <br>• <code>ix_documents_workspace_id</code> & <code>classification</code>
+              <br>• <code>ix_audit_logs_sequence_number</code> & <code>entry_hash</code>
+            </li>
+            <li><strong>Rejected Indexes:</strong>
+              <br>• <code>details_json</code> (high write amplification on every action)
+              <br>• <code>is_deleted</code> (low cardinality; 2 values cause optimizer to use table scan)
+            </li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>100x Scaling Strategy</h3>
+          <ul>
+            <li><strong>Range Partitioning:</strong> Partition <code>audit_logs</code> by year and month.</li>
+            <li><strong>Read Replicas:</strong> Primary database for writes and hash-chaining; streaming read replicas for clearance queries.</li>
+            <li><strong>Blob Decoupling:</strong> Store raw files in S3 / GCS, keeping only SHA-256 fingerprint pointers in DB.</li>
+            <li><strong>Redis In-Memory Caching:</strong> Cache clearance tiers and session tokens with invalidation hooks.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="teleprompter-box">
+        <div class="teleprompter-cue">▶ Spoken Script & Action: [CLICK 'EXPLAIN Index Plan']</div>
+        "To make database usage efficient, we created targeted B-tree indexes. On screen, our EXPLAIN QUERY PLAN shows that looking up a document by its SHA-256 fingerprint uses index SEARCH ix_document_versions_sha256_hash in O(log N) time, whereas unindexed text scans require a full table scan. We rejected indexing unstructured details_json due to write amplification, and rejected indexing boolean flags due to low cardinality. If our user base grew 100 times, the audit log table would break first. We would implement range partitioning by year, deploy read replicas for clearance lookups, decouple binary storage to Cloud Object Storage, and cache user clearances in Redis."
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div>DocuVault DBMS Major Project Viva Presentation Deck</div>
+    <div class="dots" id="dotsContainer"></div>
+    <div>Use Left/Right Arrow Keys or Space to navigate</div>
+  </footer>
+
+  <script>
+    const slides = document.querySelectorAll(".slide");
+    const dotsContainer = document.getElementById("dotsContainer");
+    const slideIndicator = document.getElementById("slideIndicator");
+    const btnPrev = document.getElementById("btnPrev");
+    const btnNext = document.getElementById("btnNext");
+    let currentSlide = 0;
+
+    // Create dots
+    slides.forEach((_, idx) => {
+      const dot = document.createElement("div");
+      dot.className = `dot ${idx === 0 ? "active" : ""}`;
+      dot.onclick = () => goToSlide(idx);
+      dotsContainer.appendChild(dot);
+    });
+
+    function updateSlide() {
+      slides.forEach((s, idx) => s.classList.toggle("active", idx === currentSlide));
+      document.querySelectorAll(".dot").forEach((d, idx) => d.classList.toggle("active", idx === currentSlide));
+      slideIndicator.textContent = `${currentSlide + 1} / ${slides.length}`;
+      btnPrev.disabled = currentSlide === 0;
+      btnNext.disabled = currentSlide === slides.length - 1;
+    }
+
+    function goToSlide(n) {
+      if (n >= 0 && n < slides.length) {
+        currentSlide = n;
+        updateSlide();
+      }
+    }
+
+    btnPrev.onclick = () => goToSlide(currentSlide - 1);
+    btnNext.onclick = () => goToSlide(currentSlide + 1);
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === " ") {
+        goToSlide(currentSlide + 1);
+      } else if (e.key === "ArrowLeft") {
+        goToSlide(currentSlide - 1);
+      }
+    });
+
+    // Timer functionality
+    let timerInterval = null;
+    let secondsElapsed = 0;
+    const timerDisplay = document.getElementById("timerDisplay");
+    const btnTimerToggle = document.getElementById("btnTimerToggle");
+    const btnTimerReset = document.getElementById("btnTimerReset");
+
+    function renderTimer() {
+      const mins = Math.floor(secondsElapsed / 60);
+      const secs = secondsElapsed % 60;
+      timerDisplay.textContent = `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+
+      if (secondsElapsed >= 570) { // 9:30+
+        timerDisplay.className = "timer-display danger";
+      } else if (secondsElapsed >= 420) { // 7:00+
+        timerDisplay.className = "timer-display warn";
+      } else {
+        timerDisplay.className = "timer-display";
+      }
+    }
+
+    btnTimerToggle.onclick = () => {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        btnTimerToggle.textContent = "Resume";
+      } else {
+        timerInterval = setInterval(() => {
+          secondsElapsed++;
+          renderTimer();
+        }, 1000);
+        btnTimerToggle.textContent = "Pause";
+      }
+    };
+
+    btnTimerReset.onclick = () => {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      secondsElapsed = 0;
+      renderTimer();
+      btnTimerToggle.textContent = "Start";
+    };
+  </script>
+</body>
+</html>
