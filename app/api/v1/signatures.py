@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.constants import ActionType, ResourceType, DocumentStatus
 from app.models.user import User
+from app.models.workspace import Workspace
 from app.models.document import Document
 from app.models.document_version import DocumentVersion
 from app.models.signature import DigitalSignature
@@ -16,6 +17,19 @@ from app.services.crypto_service import CryptoService
 from app.services.audit_service import AuditService
 
 router = APIRouter(prefix="/signatures", tags=["Signatures"])
+
+
+@router.get("", response_model=List[SignatureResponse])
+@router.get("/", response_model=List[SignatureResponse])
+def list_signatures(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """List all digital signatures recorded within the user's organization."""
+    query = db.query(DigitalSignature).join(DocumentVersion).join(Document).join(Workspace).filter(
+        Workspace.organization_id == current_user.organization_id
+    ).order_by(DigitalSignature.signed_at.desc())
+    return query.all()
 
 
 @router.post("/approve/{version_id}")
