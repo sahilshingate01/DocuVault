@@ -52,6 +52,7 @@ uploads/
 node_modules/
 desktop/node_modules/
 desktop/dist/
+hallmark/
 
 # Pytest / Coverage
 .pytest_cache/
