@@ -1,0 +1,23 @@
+{
+  "name": "docuvault",
+  "version": "1.0.0",
+  "description": "DocuVault - Secure Document Management System with DigiLocker-Grade Provenance",
+  "scripts": {
+    "desktop": "cd desktop && npm start",
+    "desktop:dev": "cd desktop && npm run dev",
+    "desktop:install": "cd desktop && npm install",
+    "server": "PYTHONPATH=. venv/bin/python3 app/main.py",
+    "test": "PYTHONPATH=. venv/bin/pytest",
+    "start": "npm run desktop"
+  },
+  "keywords": [
+    "docuvault",
+    "digilocker",
+    "security",
+    "audit-ledger",
+    "desktop",
+    "electron"
+  ],
+  "author": "DocuVault Team",
+  "license": "Apache-2.0"
+}
