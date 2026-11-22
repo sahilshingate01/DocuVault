@@ -36,6 +36,40 @@ def _to_doc_response(doc: Document) -> DocumentResponse:
     return res
 
 
+@router.get("", response_model=List[DocumentResponse])
+@router.get("/", response_model=List[DocumentResponse])
+def list_documents(
+    workspace_id: Optional[str] = None,
+    status: Optional[str] = None,
+    classification: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Lists accessible non-deleted documents in the user's organization,
+    filtered strictly by the user's security clearance tier.
+    """
+    effective_clearance = AccessControlService.get_effective_clearance(current_user)
+    query = db.query(Document).join(Workspace).filter(
+        Document.is_deleted == False,
+        Workspace.organization_id == current_user.organization_id
+    )
+    if workspace_id:
+        query = query.filter(Document.workspace_id == workspace_id)
+    if status:
+        query = query.filter(Document.status == status)
+    if classification:
+        query = query.filter(Document.classification == classification)
+
+    candidates: List[Document] = query.order_by(Document.created_at.desc()).all()
+    accessible_docs: List[DocumentResponse] = []
+    for doc in candidates:
+        if ClassificationLevel.can_access(effective_clearance, doc.classification) and \
+           ClassificationLevel.can_access(effective_clearance, doc.workspace.classification):
+            accessible_docs.append(_to_doc_response(doc))
+    return accessible_docs
+
+
 @router.get("/trash/list", response_model=List[DocumentResponse])
 def list_deleted_documents(
     db: Session = Depends(get_db),
