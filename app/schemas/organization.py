@@ -11,7 +11,7 @@ class OrganizationBase(BaseModel):
     description: Optional[str] = None
     jurisdiction: Optional[str] = None
     contact_email: Optional[str] = None
-    is_active: bool = True
+    is_active: Optional[bool] = True
 
 
 class OrganizationCreate(OrganizationBase):

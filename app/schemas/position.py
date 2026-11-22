@@ -17,7 +17,7 @@ class PositionBase(BaseModel):
     can_manage_users: bool = False
     allowed_actions: List[str] = ["READ"]
     department_id: str
-    is_active: bool = True
+    is_active: Optional[bool] = True
 
 
 class PositionCreate(PositionBase):

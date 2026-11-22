@@ -9,7 +9,7 @@ class DepartmentBase(BaseModel):
     code: str
     description: Optional[str] = None
     organization_id: str
-    is_active: bool = True
+    is_active: Optional[bool] = True
 
 
 class DepartmentCreate(DepartmentBase):
