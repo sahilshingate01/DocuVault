@@ -810,5 +810,111 @@ if (typeof window.initCobaltField === "function") {
 
 setupWebDBMSActions();
 
+// Initialize Autopilot if ?autopilot=1 requested
+function initVivaAutopilot() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("autopilot") !== "1") return;
+
+    // Director indicator badge in bottom right corner
+    const badge = document.createElement("div");
+    badge.id = "vivaDirectorBadge";
+    badge.style.cssText = "position: fixed; bottom: 20px; right: 24px; z-index: 99999; background: #0c101c; color: #38bdf8; border: 1px solid #0284c7; padding: 10px 18px; border-radius: 6px; font-family: monospace; font-size: 13px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.6); pointer-events: none;";
+    badge.textContent = "🎬 VIVA DEMO AUTOPILOT ACTIVE (00:00 / 09:15)";
+    document.body.appendChild(badge);
+
+    let secElapsed = 0;
+    const timer = setInterval(() => {
+        secElapsed++;
+        const mins = String(Math.floor(secElapsed / 60)).padStart(2, "0");
+        const secs = String(secElapsed % 60).padStart(2, "0");
+        let phase = "Introduction";
+        if (secElapsed >= 45 && secElapsed < 150) phase = "Q1: Database Selection & Workload";
+        else if (secElapsed >= 150 && secElapsed < 270) phase = "Q2: Schema & 6-Table JOIN";
+        else if (secElapsed >= 270 && secElapsed < 360) phase = "Q3: 3NF/BCNF & Denormalization";
+        else if (secElapsed >= 360 && secElapsed < 465) phase = "Q4: Constraints & Extra Credit";
+        else if (secElapsed >= 465 && secElapsed < 540) phase = "Q5: Indexing & 100x Scaling";
+        else if (secElapsed >= 540) phase = "Conclusion & Wrap-Up";
+
+        badge.textContent = `🎬 [${mins}:${secs} / 09:15] ${phase}`;
+        if (secElapsed >= 555) clearInterval(timer);
+    }, 1000);
+
+    const schedule = (sec, fn) => setTimeout(fn, sec * 1000);
+
+    // 0:18 - Show Documents Vault
+    schedule(18, () => {
+        document.querySelector('.nav-item[data-tab="documents"]')?.click();
+    });
+
+    // 0:38 - Navigate to DBMS Viva Studio
+    schedule(38, () => {
+        document.querySelector('.nav-item[data-tab="dbms"]')?.click();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    // 1:20 - Scroll down to Table Inventory (Q1)
+    schedule(80, () => {
+        document.getElementById("webDbmsTableBody")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+
+    // 2:25 - Scroll to Q2 Schema Walkthrough
+    schedule(145, () => {
+        document.querySelector('.badge-restricted')?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+
+    // 2:45 - Run 6-Table Relational JOIN (Q2)
+    schedule(165, () => {
+        document.getElementById("webBtnRunVivaJoin")?.click();
+    });
+
+    // 3:20 - Scroll down through the query output
+    schedule(200, () => {
+        const out = document.getElementById("webVivaOutputBody");
+        if (out) out.scrollTo({ top: 180, behavior: "smooth" });
+    });
+
+    // 4:30 - Scroll to Q3 (Normal Forms & Denormalization)
+    schedule(270, () => {
+        document.querySelector('.badge-unclassified')?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+
+    // 6:00 - Scroll to Q4 (Constraints & Transactions)
+    schedule(360, () => {
+        document.querySelector('.badge-top-secret')?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+
+    // 6:15 - Test Atomic Rollback (Q4)
+    schedule(375, () => {
+        document.getElementById("webBtnTestTx")?.click();
+    });
+
+    // 6:45 - Trigger Constraint Rejection for EXTRA CREDIT (Q4)
+    schedule(405, () => {
+        document.getElementById("webBtnTriggerConstraint")?.click();
+    });
+
+    // 7:45 - Scroll to Q5 (Indexing & 100x Scaling)
+    schedule(465, () => {
+        document.querySelector('.badge-secret')?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+
+    // 8:00 - Run EXPLAIN Index Plan (Q5)
+    schedule(480, () => {
+        document.getElementById("webBtnExplainPlan")?.click();
+    });
+
+    // 9:00 - Navigate to Audit Ledger
+    schedule(540, () => {
+        document.querySelector('.nav-item[data-tab="audit"]')?.click();
+    });
+
+    // 9:15 - Return to Workspaces
+    schedule(555, () => {
+        document.querySelector('.nav-item[data-tab="workspaces"]')?.click();
+    });
+}
+
+initVivaAutopilot();
+
 // Initialize with Superintendent of Police persona
 switchPersona("sp");
