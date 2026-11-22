@@ -72,6 +72,9 @@
                 <button class="nav-item" data-tab="security">
                     <span class="icon">🛡️</span> ABAC & Security SOC
                 </button>
+                <button class="nav-item" data-tab="dbms">
+                    <span class="icon">🗄️</span> DBMS Viva Studio
+                </button>
             </nav>
 
             <div class="sidebar-status-card">
@@ -253,6 +256,91 @@
                         <button id="btnRunAbacEval" class="btn btn-primary">Evaluate ABAC Policy</button>
                     </div>
                     <div id="abacEvaluationResult" style="margin-top: 1rem;"></div>
+                </div>
+            </div>
+
+            <!-- Tab 8: DBMS Architecture & Major Project Viva Studio -->
+            <div id="tab-dbms" class="tab-pane">
+                <div class="pane-header">
+                    <div>
+                        <h2>DBMS Architecture & Viva Studio</h2>
+                        <p class="subtitle">Live database inspection, schema walkthrough, multi-table joins, and constraint verification</p>
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button id="webBtnRunVivaJoin" class="btn btn-primary btn-sm">▶ Run 6-Table JOIN</button>
+                        <button id="webBtnTriggerConstraint" class="btn btn-warning btn-sm" style="background-color: var(--color-error); border-color: var(--color-error); color: #fff;">★ Trigger Constraint (Extra Credit)</button>
+                        <button id="webBtnTestTx" class="btn btn-secondary btn-sm">⚡ Test Atomic Rollback</button>
+                        <button id="webBtnExplainPlan" class="btn btn-secondary btn-sm">🔍 EXPLAIN Index Plan</button>
+                    </div>
+                </div>
+
+                <!-- Live Output Card -->
+                <div id="webVivaLiveOutput" class="card" style="display: none; margin-bottom: 1.5rem; background: var(--color-paper-2);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <h4 id="webVivaOutputTitle" style="font-family: var(--font-display); font-size: 1rem;">Live Output</h4>
+                        <button id="webBtnCloseVivaOutput" class="btn btn-secondary btn-sm">✕ Close</button>
+                    </div>
+                    <pre id="webVivaOutputBody" style="font-family: var(--font-mono); font-size: 0.75rem; white-space: pre-wrap; max-height: 250px; overflow-y: auto; background: var(--color-graphite-0); color: var(--color-graphite-ink); padding: 12px; border-radius: 4px;"></pre>
+                </div>
+
+                <!-- 5 Viva Question Breakdown Cards -->
+                <div class="grid-cards" style="margin-bottom: 1.5rem;">
+                    <div class="card">
+                        <span class="badge badge-confidential" style="align-self: flex-start;">Q1. Database Choice & Workload</span>
+                        <h3 class="card-title">Relational RDBMS (ACID)</h3>
+                        <p class="subtitle">Strict consistency for court evidence. Relational model protects Bell-LaPadula clearance. MongoDB rejected due to lack of native cascading foreign keys.</p>
+                        <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-muted);">80% Reads : 20% Atomic Writes</div>
+                    </div>
+
+                    <div class="card">
+                        <span class="badge badge-restricted" style="align-self: flex-start;">Q2. Schema Walkthrough</span>
+                        <h3 class="card-title">11 Relational Tables</h3>
+                        <p class="subtitle">Normalized multi-tenant hierarchy. M:N relations between Users and DocumentVersions resolved via <code>digital_signatures</code> and <code>chain_of_custody</code>.</p>
+                        <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-muted);">Referential Integrity via CASCADE & SET NULL</div>
+                    </div>
+
+                    <div class="card">
+                        <span class="badge badge-unclassified" style="align-self: flex-start;">Q3. Normalization (3NF/BCNF)</span>
+                        <h3 class="card-title">3NF & Controlled Denormalization</h3>
+                        <p class="subtitle">All determinants are candidate keys. Transitive dependencies removed. <code>audit_logs</code> deliberately keeps user snapshot to preserve historical court evidence.</p>
+                        <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-muted);">Immutable Append-Only Audit Stream</div>
+                    </div>
+
+                    <div class="card">
+                        <span class="badge badge-top-secret" style="align-self: flex-start;">Q4. Constraints & Atomicity</span>
+                        <h3 class="card-title">Data Correctness Bench</h3>
+                        <p class="subtitle">NOT NULL, UNIQUE, and FOREIGN KEYs. Atomic uploads commit [Doc] + [Version] + [AuditLink] in a single ACID block. Click button above for Extra Credit test.</p>
+                        <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-error);">★ Extra Credit Constraint Rejection Ready</div>
+                    </div>
+
+                    <div class="card">
+                        <span class="badge badge-secret" style="align-self: flex-start;">Q5. Indexing & Scaling</span>
+                        <h3 class="card-title">B-Tree Indexes & 100x Growth</h3>
+                        <p class="subtitle">B-Tree index on <code>sha256_hash</code> provides $O(\log N)$ lookup. 100x scaling plan leverages range partitioning on audit logs and blob decoupling to cloud storage.</p>
+                        <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--color-muted);">Range Partitioning + Read Replicas</div>
+                    </div>
+                </div>
+
+                <!-- Live Table Inventory -->
+                <div class="card">
+                    <h3 class="card-title" style="margin-bottom: 0.75rem;">Relational Table Inventory & Schema Introspection</h3>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Table Name</th>
+                                    <th>Rows</th>
+                                    <th>Columns</th>
+                                    <th>Primary Key</th>
+                                    <th>Foreign Keys</th>
+                                    <th>Indexes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="webDbmsTableBody">
+                                <tr><td colspan="6" style="text-align: center; color: var(--color-muted);">Loading database introspection...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </section>
