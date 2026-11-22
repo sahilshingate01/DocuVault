@@ -35,6 +35,18 @@ def sync_db_schema(db_engine):
                         nullable = "NULL" if col.nullable else "DEFAULT ''"
                         conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {col.name} {col_type}"))
 
+    # Repair any legacy NULL boolean flags in SQLite
+    with db_engine.begin() as conn:
+        for tbl in ["organizations", "departments", "positions", "users"]:
+            if inspector.has_table(tbl):
+                cols = {c["name"] for c in inspector.get_columns(tbl)}
+                if "is_active" in cols:
+                    conn.execute(text(f"UPDATE {tbl} SET is_active = 1 WHERE is_active IS NULL"))
+        if inspector.has_table("documents"):
+            cols = {c["name"] for c in inspector.get_columns("documents")}
+            if "is_deleted" in cols:
+                conn.execute(text("UPDATE documents SET is_deleted = 0 WHERE is_deleted IS NULL"))
+
 
 def get_db() -> Generator[Session, None, None]:
     """FastAPI dependency for yielding transactional database sessions."""
