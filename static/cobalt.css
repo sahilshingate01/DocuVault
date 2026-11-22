@@ -1,0 +1,850 @@
+/* ==========================================================================
+   DocuVault - Cobalt Theme Core Stylesheet
+   Designed according to Hallmark Cobalt theme (Technical, Exact, Restrained)
+   ========================================================================== */
+
+@import url("./cobalt-tokens.css");
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: var(--display-weight);
+  letter-spacing: var(--tracking-display);
+  color: var(--color-ink);
+  line-height: 1.15;
+}
+
+code, kbd, pre, .mono {
+  font-family: var(--font-mono);
+}
+
+/* ==========================================================================
+   Tactile Keycaps (Hallmark Cobalt Buttons)
+   ========================================================================== */
+
+.key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  min-height: 38px;
+  padding: 0 var(--space-md);
+  border: var(--rule-hair) solid var(--color-rule-2);
+  border-radius: var(--radius-input);
+  background: var(--color-key-face);
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: var(--shadow-key);
+  transition: transform var(--dur-micro) var(--ease-out), box-shadow var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out);
+  user-select: none;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.key:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-key-hover);
+  color: var(--color-ink);
+}
+
+.key:active {
+  transform: translateY(3px);
+  box-shadow: var(--shadow-key-press);
+}
+
+.key--sm {
+  min-height: 28px;
+  padding: 0 var(--space-sm);
+  font-size: var(--text-xs);
+  box-shadow: 0 2px 0 0 var(--color-key-edge), 0 3px 5px -2px var(--color-key-drop), inset 0 1px 0 var(--color-key-hi);
+}
+
+.key--sm:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 0 var(--color-key-edge), inset 0 1px 2px var(--color-key-press);
+}
+
+.key--primary {
+  background: var(--color-accent);
+  border-color: var(--color-accent-edge);
+  color: var(--color-accent-ink);
+  box-shadow: var(--shadow-key-accent);
+}
+
+.key--primary:hover {
+  background: var(--color-accent-hover);
+  color: var(--color-accent-ink);
+  box-shadow: var(--shadow-key-accent-hover);
+}
+
+.key--primary:active {
+  transform: translateY(3px);
+  box-shadow: var(--shadow-key-accent-press);
+}
+
+.key--danger {
+  background: var(--color-error);
+  border-color: oklch(42% 0.16 27);
+  color: #fff;
+  box-shadow: 0 3px 0 0 oklch(42% 0.16 27), 0 6px 8px -4px oklch(21% 0.1 27 / 0.4), inset 0 1px 0 oklch(100% 0 0 / 0.2);
+}
+
+.key--danger:hover {
+  background: oklch(48% 0.2 27);
+}
+
+.key--danger:active {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 0 oklch(42% 0.16 27), inset 0 1px 2px oklch(21% 0.1 27 / 0.3);
+}
+
+.key-tray {
+  display: inline-flex;
+  align-items: center;
+  background: var(--color-paper-tray);
+  border: 1px solid var(--color-rule-2);
+  border-radius: var(--radius-input);
+  padding: 3px;
+  gap: 2px;
+  box-shadow: var(--shadow-tray);
+}
+
+.key-tray-item {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-muted);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all var(--dur-micro) var(--ease-out);
+}
+
+.key-tray-item.active {
+  background: var(--color-key-face);
+  color: var(--color-ink);
+  border-color: var(--color-rule-2);
+  box-shadow: 0 2px 0 var(--color-key-edge), inset 0 1px 0 var(--color-key-hi);
+}
+
+/* ==========================================================================
+   Cut-Corner Surfaces
+   ========================================================================== */
+
+.cut-card {
+  border: var(--rule-hair) solid var(--color-rule);
+  border-radius: var(--radius-card);
+  background: var(--color-paper);
+  box-shadow: var(--shadow-card);
+  transition: border-color var(--dur-micro) var(--ease-out), box-shadow var(--dur-micro) var(--ease-out);
+}
+
+@supports (corner-shape: bevel) {
+  .cut-card {
+    border-radius: var(--cut-l) 4px var(--cut-l) 4px;
+    corner-shape: bevel round bevel round;
+  }
+}
+
+.cut-card:hover {
+  border-color: var(--color-accent-2);
+}
+
+/* ==========================================================================
+   Desktop Window Titlebar (macOS Integrated)
+   ========================================================================== */
+
+.cobalt-titlebar {
+  height: 54px;
+  background: var(--color-paper-2);
+  border-bottom: 1px solid var(--color-rule);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-md);
+  -webkit-app-region: drag;
+  z-index: 1000;
+  flex-shrink: 0;
+}
+
+.platform-darwin .cobalt-titlebar {
+  padding-left: 80px;
+}
+
+.titlebar-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--color-ink);
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wordmark__glyph {
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+.tag-cobalt {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--color-accent-wash);
+  color: var(--color-accent);
+  border: 1px solid oklch(52% 0.19 258 / 0.25);
+}
+
+.titlebar-center {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  -webkit-app-region: no-drag;
+}
+
+.server-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-paper);
+  border: 1px solid var(--color-rule);
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: all var(--dur-micro) var(--ease-out);
+}
+
+.server-pill:hover {
+  border-color: var(--color-accent);
+}
+
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--color-success);
+  box-shadow: 0 0 6px oklch(50% 0.12 150 / 0.6);
+}
+
+.pulse-dot.disconnected {
+  background-color: var(--color-error);
+  box-shadow: 0 0 6px oklch(52% 0.19 27 / 0.6);
+}
+
+.persona-picker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+
+.persona-select {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  border: 1px solid var(--color-rule-2);
+  border-radius: var(--radius-input);
+  padding: 5px 10px;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  outline: none;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+
+.titlebar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  -webkit-app-region: no-drag;
+}
+
+.user-badge-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 4px 10px;
+  border-radius: var(--radius-input);
+  background: var(--color-paper);
+  border: 1px solid var(--color-rule);
+}
+
+.user-name-text {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--text-xs);
+}
+
+/* ==========================================================================
+   Clearance Stamps (Cobalt Technical Badges)
+   ========================================================================== */
+
+.stamp-clearance {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-block;
+}
+
+.stamp-top-secret {
+  background: oklch(96% 0.03 27);
+  color: oklch(48% 0.22 27);
+  border: 1px solid oklch(48% 0.22 27 / 0.35);
+}
+
+.stamp-secret {
+  background: oklch(96% 0.04 65);
+  color: oklch(55% 0.18 65);
+  border: 1px solid oklch(55% 0.18 65 / 0.35);
+}
+
+.stamp-confidential {
+  background: var(--color-accent-wash);
+  color: var(--color-accent);
+  border: 1px solid oklch(52% 0.19 258 / 0.35);
+}
+
+.stamp-restricted {
+  background: oklch(96% 0.03 300);
+  color: oklch(52% 0.18 300);
+  border: 1px solid oklch(52% 0.18 300 / 0.35);
+}
+
+.stamp-unclassified {
+  background: var(--color-paper-3);
+  color: var(--color-muted);
+  border: 1px solid var(--color-rule-2);
+}
+
+/* ==========================================================================
+   Layout: Sidebar + Main Canvas
+   ========================================================================== */
+
+.cobalt-workspace {
+  display: flex;
+  flex: 1;
+  height: calc(100vh - 54px);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Sidebar */
+.cobalt-sidebar {
+  width: 250px;
+  background-color: var(--color-paper-2);
+  border-right: 1px solid var(--color-rule);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-sm);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.sidebar-nav-title {
+  font-family: var(--font-display);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+  font-weight: 600;
+  padding: 0 var(--space-sm) var(--space-xs);
+}
+
+.sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-input);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--color-ink-2);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--dur-micro) var(--ease-out);
+}
+
+.sidebar-item:hover {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  border-color: var(--color-rule);
+}
+
+.sidebar-item.active {
+  background: var(--color-accent-wash);
+  color: var(--color-accent);
+  border-color: oklch(52% 0.19 258 / 0.3);
+  font-weight: 600;
+}
+
+.sidebar-item .item-glyph {
+  font-size: 14px;
+  color: var(--color-muted);
+  width: 16px;
+  text-align: center;
+}
+
+.sidebar-item.active .item-glyph {
+  color: var(--color-accent);
+}
+
+/* Sidebar Graphite Cryptography Card */
+.sidebar-graphite-card {
+  background: var(--color-graphite);
+  color: var(--color-graphite-ink);
+  border: 1px solid var(--color-graphite-2);
+  border-radius: var(--radius-card);
+  padding: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sgc-title {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-accent-2);
+}
+
+.sgc-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.sgc-label {
+  color: var(--color-graphite-muted);
+}
+
+.sgc-val {
+  font-family: var(--font-mono);
+  color: var(--color-graphite-ink);
+  font-weight: 500;
+}
+
+.sgc-badge {
+  margin-top: 4px;
+  text-align: center;
+  background: oklch(30% 0.06 150);
+  border: 1px solid oklch(50% 0.12 150 / 0.4);
+  color: oklch(80% 0.12 150);
+  padding: 3px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.sgc-badge.tampered {
+  background: oklch(30% 0.06 27);
+  border-color: oklch(52% 0.19 27 / 0.5);
+  color: oklch(80% 0.15 27);
+}
+
+/* ==========================================================================
+   Main Canvas Area & ASCII Field Background
+   ========================================================================== */
+
+.cobalt-canvas {
+  flex: 1;
+  position: relative;
+  background-color: var(--color-paper);
+  overflow-y: auto;
+  padding: var(--space-lg) var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+/* The Signature Cobalt Background Field Canvas */
+.field-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 240px;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.7;
+}
+
+.pane-view {
+  display: none;
+  flex-direction: column;
+  gap: var(--space-lg);
+  position: relative;
+  z-index: 2;
+}
+
+.pane-view.active {
+  display: flex;
+}
+
+.pane-headline-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.pane-headline-row h1 {
+  font-size: var(--text-2xl);
+  color: var(--color-ink);
+}
+
+.pane-lead {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   Ruled Tables (Hallmark Cobalt API Table Style)
+   ========================================================================== */
+
+.table-frame {
+  background: var(--color-paper);
+  border: var(--rule-hair) solid var(--color-rule);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.cobalt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  text-align: left;
+}
+
+.cobalt-table th {
+  background: var(--color-paper-2);
+  padding: 10px 14px;
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.cobalt-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-rule);
+  color: var(--color-ink);
+  vertical-align: middle;
+}
+
+.cobalt-table tr:hover td {
+  background: var(--color-accent-wash);
+}
+
+.hash-pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-accent-deep);
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   Cards & Grids
+   ========================================================================== */
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-md);
+}
+
+.workspace-card {
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.workspace-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.ws-title {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.ws-code {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+
+.ws-stats {
+  border-top: 1px solid var(--color-rule);
+  padding-top: var(--space-xs);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+
+/* ==========================================================================
+   Offline File Verifier (Cobalt Cut Dropzone)
+   ========================================================================== */
+
+.verifier-zone {
+  border: 2px dashed var(--color-rule-2);
+  border-radius: var(--radius-card);
+  background: var(--color-paper-2);
+  padding: var(--space-2xl) var(--space-xl);
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--dur-short) var(--ease-out);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.verifier-zone:hover, .verifier-zone.dragover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-wash);
+}
+
+.verifier-zone .vz-icon {
+  font-size: 36px;
+}
+
+.verifier-zone .vz-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.verifier-zone .vz-desc {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  max-width: 480px;
+}
+
+/* ==========================================================================
+   Graphite Code / Ledger Panes
+   ========================================================================== */
+
+.graphite-panel {
+  background: var(--color-graphite);
+  color: var(--color-graphite-ink);
+  border: 1px solid var(--color-graphite-2);
+  border-radius: var(--radius-card);
+  padding: var(--space-md);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+}
+
+.graphite-panel .token-accent {
+  color: var(--color-accent-2);
+}
+
+.graphite-panel .token-muted {
+  color: var(--color-graphite-muted);
+}
+
+/* ==========================================================================
+   Modals (Cut-Corner Clean)
+   ========================================================================== */
+
+.cobalt-modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: oklch(21% 0.028 262 / 0.5);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-short) var(--ease-out);
+}
+
+.cobalt-modal-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.cobalt-modal-card {
+  background: var(--color-paper);
+  border: 1px solid var(--color-rule-2);
+  border-radius: var(--radius-card);
+  width: 540px;
+  max-width: 90vw;
+  box-shadow: var(--shadow-panel);
+  display: flex;
+  flex-direction: column;
+}
+
+@supports (corner-shape: bevel) {
+  .cobalt-modal-card {
+    border-radius: var(--cut-l) 4px var(--cut-l) 4px;
+    corner-shape: bevel round bevel round;
+  }
+}
+
+.modal-head {
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--color-rule);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-body {
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.modal-foot {
+  padding: var(--space-md) var(--space-lg);
+  border-top: 1px solid var(--color-rule);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-field label {
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.cobalt-input, .cobalt-select {
+  background: var(--color-paper);
+  border: 1px solid var(--color-rule-2);
+  color: var(--color-ink);
+  padding: 8px 12px;
+  border-radius: var(--radius-input);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  outline: none;
+  transition: border-color var(--dur-micro) var(--ease-out);
+}
+
+.cobalt-input:focus, .cobalt-select:focus {
+  border-color: var(--color-accent);
+}
+
+/* ==========================================================================
+   Toasts (Tactile Notifications)
+   ========================================================================== */
+
+.cobalt-toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 3000;
+}
+
+.cobalt-toast {
+  background: var(--color-paper);
+  border: 1px solid var(--color-rule-2);
+  color: var(--color-ink);
+  padding: 10px 16px;
+  border-radius: var(--radius-input);
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--shadow-panel);
+}
+
+.cobalt-toast--success {
+  border-left: 3px solid var(--color-success);
+}
+
+.cobalt-toast--error {
+  border-left: 3px solid var(--color-error);
+}
+
+.cobalt-toast--warn {
+  border-left: 3px solid var(--color-warn);
+}
