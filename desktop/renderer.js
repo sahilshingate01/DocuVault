@@ -100,7 +100,7 @@ async function authenticatePersona(key) {
     }
 
     const data = await res.json();
-    currentToken = data.access_token;
+    currentToken = data.token || data.access_token;
 
     // Update UI Header
     document.getElementById("activeUserName").textContent = p.name;
@@ -206,7 +206,7 @@ async function loadWorkspaces() {
   grid.innerHTML = '<div style="color: var(--text-dim); padding: 20px;">Loading workspaces...</div>';
 
   try {
-    const res = await fetch(`${API_BASE}/api/v1/workspaces/`, {
+    const res = await fetch(`${API_BASE}/api/v1/workspaces`, {
       headers: { Authorization: `Bearer ${currentToken}` }
     });
 
@@ -271,9 +271,15 @@ async function loadDocuments() {
   tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading documents...</td></tr>';
 
   try {
-    const res = await fetch(`${API_BASE}/api/v1/documents/`, {
+    let res = await fetch(`${API_BASE}/api/v1/documents`, {
       headers: { Authorization: `Bearer ${currentToken}` }
     });
+
+    if (!res.ok) {
+      res = await fetch(`${API_BASE}/api/v1/search`, {
+        headers: { Authorization: `Bearer ${currentToken}` }
+      });
+    }
 
     if (!res.ok) {
       tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--accent-red); padding: 24px;">Access Denied or Failed to Load (${res.status})</td></tr>`;
@@ -281,7 +287,7 @@ async function loadDocuments() {
     }
 
     const data = await res.json();
-    cachedDocuments = data.items || data;
+    cachedDocuments = data.items || data.results || (Array.isArray(data) ? data : []);
 
     if (!cachedDocuments.length) {
       tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 24px;">Vault empty or no documents match your clearance tier.</td></tr>';
@@ -289,24 +295,30 @@ async function loadDocuments() {
     }
 
     tbody.innerHTML = cachedDocuments.map((doc) => {
-      const tierClass = `badge-${doc.classification.toLowerCase().replace("_", "-")}`;
+      const tierClass = `badge-${(doc.classification || "unclassified").toLowerCase().replace("_", "-")}`;
       const statusBadge = doc.status === "APPROVED" 
         ? '<span style="color: var(--accent-green); font-weight: 600;">✓ Approved</span>'
         : doc.status === "SIGNED"
         ? '<span style="color: #60a5fa; font-weight: 600;">✍️ Signed</span>'
-        : `<span style="color: var(--text-dim);">${doc.status}</span>`;
+        : `<span style="color: var(--text-dim);">${doc.status || "DRAFT"}</span>`;
+
+      const curVer = doc.current_version;
+      const verNum = curVer ? (typeof curVer === 'object' ? curVer.version_number : curVer) : 1;
+      const sha256 = (curVer && curVer.sha256_hash) || doc.current_sha256 || "Pending";
+      const fileSizeKb = curVer && curVer.file_size ? (curVer.file_size / 1024).toFixed(1) : (doc.file_size ? (doc.file_size / 1024).toFixed(1) : "0.0");
+      const wsName = doc.workspace ? doc.workspace.name : (doc.workspace_name || doc.workspace_id || "Vault Workspace");
 
       return `
         <tr>
           <td style="font-family: var(--font-mono); font-size: 12px; font-weight: 600;">${doc.document_number}</td>
           <td>
             <div style="font-weight: 600;">${doc.title}</div>
-            <div style="font-size: 11px; color: var(--text-dim);">v${doc.current_version || 1} • ${(doc.file_size / 1024).toFixed(1)} KB</div>
+            <div style="font-size: 11px; color: var(--text-dim);">v${verNum} • ${fileSizeKb} KB</div>
           </td>
-          <td style="font-size: 12px; color: var(--text-muted);">${doc.workspace_name || doc.workspace_id}</td>
+          <td style="font-size: 12px; color: var(--text-muted);">${wsName}</td>
           <td><span class="badge-tier ${tierClass}">${doc.classification}</span></td>
           <td>${statusBadge}</td>
-          <td><span class="hash-cell selectable" title="${doc.current_sha256}">${doc.current_sha256}</span></td>
+          <td><span class="hash-cell selectable" title="${sha256}">${sha256}</span></td>
           <td>
             <div style="display: flex; gap: 6px;">
               <button class="btn-desk btn-desk-secondary" style="padding: 3px 8px; font-size: 11px;" onclick="verifyDocIntegrity('${doc.id}')">Verify</button>
@@ -507,7 +519,7 @@ async function loadSignatures() {
   container.innerHTML = '<div style="color: var(--text-dim); padding: 20px;">Loading signatures & approvals...</div>';
 
   try {
-    const res = await fetch(`${API_BASE}/api/v1/signatures/`, {
+    const res = await fetch(`${API_BASE}/api/v1/signatures`, {
       headers: { Authorization: `Bearer ${currentToken}` }
     });
 
@@ -575,7 +587,7 @@ async function loadAuditLedger() {
   tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 24px;">Loading cryptographic blocks...</td></tr>';
 
   try {
-    const res = await fetch(`${API_BASE}/api/v1/audit/`, {
+    const res = await fetch(`${API_BASE}/api/v1/audit/logs`, {
       headers: { Authorization: `Bearer ${currentToken}` }
     });
 
@@ -695,7 +707,7 @@ function setupAuditLedgerActions() {
 
   document.getElementById("btnExportLedger").addEventListener("click", async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/v1/audit/`, {
+      const res = await fetch(`${API_BASE}/api/v1/audit/logs`, {
         headers: { Authorization: `Bearer ${currentToken}` }
       });
       const data = await res.json();
@@ -802,7 +814,7 @@ async function loadOrganizations() {
   container.innerHTML = '<div style="color: var(--text-dim); padding: 20px;">Loading organization hierarchies...</div>';
 
   try {
-    const res = await fetch(`${API_BASE}/api/v1/organizations/`, {
+    const res = await fetch(`${API_BASE}/api/v1/organizations`, {
       headers: { Authorization: `Bearer ${currentToken}` }
     });
 
@@ -1040,7 +1052,7 @@ function setupModals() {
     const classification = document.getElementById("selectWsClassification").value;
 
     try {
-      const res = await fetch(`${API_BASE}/api/v1/workspaces/`, {
+      const res = await fetch(`${API_BASE}/api/v1/workspaces`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
