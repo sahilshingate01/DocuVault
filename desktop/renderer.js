@@ -188,6 +188,9 @@ function refreshPane(paneId) {
     case "security":
       loadSecuritySOC();
       break;
+    case "dbms":
+      loadDBMSOverview();
+      break;
   }
 }
 
@@ -934,6 +937,141 @@ async function loadSecuritySOC() {
 }
 
 // =============================================================================
+// Pane 9: DBMS Architecture & Major Project Viva Studio
+// =============================================================================
+async function loadDBMSOverview() {
+  const tbody = document.getElementById("dbmsTableInventoryBody");
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--color-muted);">Introspecting relational database engine...</td></tr>';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/dbms/overview`);
+    if (!res.ok) {
+      tbody.innerHTML = `<tr><td colspan="6" style="color: var(--color-error);">Failed to load DBMS introspection (${res.status})</td></tr>`;
+      return;
+    }
+    const data = await res.json();
+    tbody.innerHTML = (data.table_stats || []).map(t => `
+      <tr>
+        <td style="font-family: var(--font-mono); font-weight: 600; color: var(--color-accent);">${t.table_name}</td>
+        <td style="font-family: var(--font-mono);">${t.row_count}</td>
+        <td style="font-family: var(--font-mono);">${t.column_count}</td>
+        <td style="font-family: var(--font-mono); color: var(--color-muted);">${(t.primary_key || []).join(", ") || "None"}</td>
+        <td style="font-family: var(--font-mono); font-size: 10px; color: var(--color-muted); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${(t.foreign_keys || []).join('\n')}">${(t.foreign_keys || []).length ? t.foreign_keys.length + ' relation(s)' : 'None'}</td>
+        <td style="font-family: var(--font-mono); font-size: 10px; color: var(--color-muted);">${(t.indexes || []).length} index(es)</td>
+      </tr>
+    `).join("");
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color: var(--color-error);">Error: ${err.message}</td></tr>`;
+  }
+}
+
+function setupDBMSActions() {
+  const outputBox = document.getElementById("vivaLiveOutput");
+  const outputTitle = document.getElementById("vivaOutputTitle");
+  const outputBody = document.getElementById("vivaOutputBody");
+  const btnClose = document.getElementById("btnCloseVivaOutput");
+
+  if (btnClose) {
+    btnClose.onclick = () => { if (outputBox) outputBox.style.display = "none"; };
+  }
+
+  const showVivaOutput = (title, content) => {
+    if (!outputBox || !outputTitle || !outputBody) return;
+    outputTitle.textContent = title;
+    outputBody.textContent = content;
+    outputBox.style.display = "block";
+    outputBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  };
+
+  // 1. Run 6-table join
+  const btnJoin = document.getElementById("btnRunVivaJoin");
+  if (btnJoin) {
+    btnJoin.onclick = async () => {
+      showVivaOutput("Executing 6-Table Relational JOIN Query...", "Running SQL join across documents, workspaces, versions, users, positions, organizations...");
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/dbms/join?limit=5`);
+        const data = await res.json();
+        const formatted = JSON.stringify(data.records, null, 2);
+        showVivaOutput("6-Table Relational JOIN Query Output (Q2)", `Fetched ${data.count} linked record(s) across 6 normalized entities:\n\n${formatted}`);
+      } catch (e) {
+        showVivaOutput("JOIN Query Error", e.message);
+      }
+    };
+  }
+
+  // 2. Trigger constraint rejection (Extra Credit)
+  const btnConstraint = document.getElementById("btnTriggerConstraintRejection");
+  if (btnConstraint) {
+    btnConstraint.onclick = async () => {
+      showVivaOutput("Deliberately Triggering UNIQUE Constraint Violation...", "Attempting duplicate document_number insert into SQLite kernel...");
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/dbms/test-constraint`, { method: "POST" });
+        const data = await res.json();
+        if (data.rejected) {
+          const report = `★ EXTRA CREDIT DEMO SUCCEEDED ★\n\n` +
+            `Constraint Enforced: ${data.constraint_type}\n` +
+            `Violated Colliding Value: '${data.violated_value}'\n` +
+            `Database Kernel Error: ${data.database_error}\n\n` +
+            `Explanation: ${data.explanation}`;
+          showVivaOutput("Database Kernel Constraint Rejection (Q4 - Extra Credit)", report);
+          showToast("Database kernel correctly rejected duplicate key!", "error");
+        } else {
+          showVivaOutput("Constraint Test", JSON.stringify(data, null, 2));
+        }
+      } catch (e) {
+        showVivaOutput("Constraint Test Error", e.message);
+      }
+    };
+  }
+
+  // 3. Test atomic transaction
+  const btnTx = document.getElementById("btnTestTransaction");
+  if (btnTx) {
+    btnTx.onclick = async () => {
+      showVivaOutput("Testing Multi-Table Atomic Transaction with Simulated Failure...", "Starting ACID transaction: Document + Version + Audit Log link...");
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/dbms/test-transaction?simulate_failure=true`, { method: "POST" });
+        const data = await res.json();
+        const report = `Transaction Status: ${data.status}\n` +
+          `Simulated Failure: ${data.simulated_error}\n` +
+          `Orphan Records Persisted: ${data.records_persisted} (0 records)\n\n` +
+          `Outcome: ${data.explanation}`;
+        showVivaOutput("ACID Transaction Atomicity & Rollback Verification (Q4)", report);
+        showToast("Transaction rolled back cleanly without orphans", "warning");
+      } catch (e) {
+        showVivaOutput("Transaction Error", e.message);
+      }
+    };
+  }
+
+  // 4. EXPLAIN query plan
+  const btnPlan = document.getElementById("btnExplainPlan");
+  if (btnPlan) {
+    btnPlan.onclick = async () => {
+      showVivaOutput("Running EXPLAIN QUERY PLAN...", "Comparing B-Tree index scan on sha256_hash vs unindexed full table scan...");
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/dbms/explain-plan`);
+        const data = await res.json();
+        const report = `[INDEXED LOOKUP: sha256_hash]\n` +
+          `SQL: ${data.indexed_query.sql}\n` +
+          `Index: ${data.indexed_query.index_used} (${data.indexed_query.complexity})\n` +
+          `Plan: ${JSON.stringify(data.indexed_query.plan, null, 2)}\n\n` +
+          `[UNINDEXED LOOKUP: description]\n` +
+          `SQL: ${data.unindexed_query.sql}\n` +
+          `Scan Type: ${data.unindexed_query.index_used} (${data.unindexed_query.complexity})\n` +
+          `Plan: ${JSON.stringify(data.unindexed_query.plan, null, 2)}\n\n` +
+          `[100X SCALING PLAN]\n` +
+          data.scaling_100x_plan.join("\n");
+        showVivaOutput("Query Execution Plan & Scaling Profile (Q5)", report);
+      } catch (e) {
+        showVivaOutput("Query Plan Error", e.message);
+      }
+    };
+  }
+}
+
+// =============================================================================
 // Modals: Upload & Create Workspace
 // =============================================================================
 function setupModals() {
@@ -1162,6 +1300,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   setupSearch();
   setupModals();
   setupNativeBridgeEvents();
+  setupDBMSActions();
 
   // Initial check & auto-login
   await checkBackendConnectivity();

@@ -83,6 +83,9 @@
           <button class="sidebar-item" data-pane="security">
             <span class="item-glyph">🛡️</span> ABAC & Security SOC
           </button>
+          <button class="sidebar-item" data-pane="dbms">
+            <span class="item-glyph">🗄️</span> DBMS Viva Studio
+          </button>
         </nav>
       </div>
 
@@ -339,6 +342,150 @@
           </div>
 
           <div id="abacEvaluationResult" style="margin-top: 6px;"></div>
+        </div>
+      </section>
+
+      <!-- ===============================================================
+           Pane 9: DBMS Architecture & Major Project Viva Studio
+           =============================================================== -->
+      <section id="pane-dbms" class="pane">
+        <div class="pane-header">
+          <div>
+            <h2 class="pane-title">DBMS Viva Studio & Architecture Bench</h2>
+            <p class="pane-subtitle">Live schema inspection, multi-table joins, ACID transactions, and live constraint testing</p>
+          </div>
+          <div class="header-actions">
+            <button id="btnRunVivaJoin" class="key key--sm key--primary">▶ Run 6-Table JOIN</button>
+            <button id="btnTriggerConstraintRejection" class="key key--sm key--danger">★ Trigger Constraint (Extra Credit)</button>
+            <button id="btnTestTransaction" class="key key--sm">⚡ Test Atomic Rollback</button>
+            <button id="btnExplainPlan" class="key key--sm">🔍 EXPLAIN Index Plan</button>
+          </div>
+        </div>
+
+        <!-- Live Interactive Output Banner -->
+        <div id="vivaLiveOutput" class="cut-card" style="display: none; padding: var(--space-md); margin-bottom: var(--space-md); background: var(--color-paper-2);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div id="vivaOutputTitle" style="font-family: var(--font-display); font-weight: 600; font-size: 14px;">Live Output</div>
+            <button id="btnCloseVivaOutput" class="key key--sm" style="padding: 2px 8px;">✕ Close</button>
+          </div>
+          <div id="vivaOutputBody" style="font-family: var(--font-mono); font-size: 11px; white-space: pre-wrap; max-height: 220px; overflow-y: auto; background: var(--color-graphite-0); color: var(--color-graphite-ink); padding: 12px; border-radius: 4px;"></div>
+        </div>
+
+        <!-- 5 Viva Question Accordion / Cards Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: var(--space-md);">
+          <!-- Card 1: Q1 -->
+          <div class="cut-card" style="padding: var(--space-md);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span class="stamp-clearance stamp-confidential">Q1. Database Choice & Workload</span>
+              <span style="font-family: var(--font-mono); font-size: 10px; color: var(--color-muted);">RDBMS (ACID)</span>
+            </div>
+            <h4 style="font-family: var(--font-display); font-size: 14px; margin-bottom: 6px;">Why Relational & Why Not NoSQL?</h4>
+            <p style="font-size: 12px; color: var(--color-ink-2); line-height: 1.4; margin-bottom: 8px;">
+              DocuVault manages court evidence, FIRs, and classified contracts where missing a single record or having partial writes invalidates legal trials.
+            </p>
+            <div style="font-family: var(--font-mono); font-size: 11px; background: var(--color-paper-3); padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+              • Engine: SQLite 3.x (WAL Mode) & PostgreSQL<br>
+              • Access Pattern: ~80% Reads (Verification, Search) : 20% Writes (Atomic Uploads)<br>
+              • Consistency: Strict Immediate Consistency (Serializable / Read Committed)<br>
+              • Rejected: MongoDB (No native FK cascades, eventual consistency risk in clearance)
+            </div>
+          </div>
+
+          <!-- Card 2: Q2 -->
+          <div class="cut-card" style="padding: var(--space-md);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span class="stamp-clearance stamp-restricted">Q2. Schema & Relational Walkthrough</span>
+              <span style="font-family: var(--font-mono); font-size: 10px; color: var(--color-muted);">11 Normalized Tables</span>
+            </div>
+            <h4 style="font-family: var(--font-display); font-size: 14px; margin-bottom: 6px;">Entity Hierarchy & M:N Resolutions</h4>
+            <p style="font-size: 12px; color: var(--color-ink-2); line-height: 1.4; margin-bottom: 8px;">
+              Organizations ➔ Departments ➔ Positions ➔ Users ➔ Workspaces ➔ Documents ➔ Versions ➔ Signatures.
+            </p>
+            <div style="font-family: var(--font-mono); font-size: 11px; background: var(--color-paper-3); padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+              • 1:N: Workspaces ➔ Documents; Documents ➔ DocumentVersions<br>
+              • M:N (Users ↔ DocumentVersions): Resolved via <strong>digital_signatures</strong><br>
+              • M:N (Users ↔ Workspaces): Resolved via <strong>temporary_clearances</strong><br>
+              • Referential Integrity: ON DELETE CASCADE (child versions) & SET NULL (actors)
+            </div>
+          </div>
+
+          <!-- Card 3: Q3 -->
+          <div class="cut-card" style="padding: var(--space-md);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span class="stamp-clearance stamp-unclassified">Q3. Normal Forms & Denormalization</span>
+              <span style="font-family: var(--font-mono); font-size: 10px; color: var(--color-muted);">3NF / BCNF</span>
+            </div>
+            <h4 style="font-family: var(--font-display); font-size: 14px; margin-bottom: 6px;">Decomposition & Controlled Redundancy</h4>
+            <p style="font-size: 12px; color: var(--color-ink-2); line-height: 1.4; margin-bottom: 8px;">
+              Every determinant is a candidate key. Transitive dependencies eliminated (Users do not store Dept/Position names).
+            </p>
+            <div style="font-family: var(--font-mono); font-size: 11px; background: var(--color-paper-3); padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+              • 1NF: Atomic columns, surrogate primary keys, scalar serialization<br>
+              • 2NF: No partial key dependencies; attributes depend on whole UUID PK<br>
+              • 3NF: No transitive dependencies ($X \to Y \to Z$ removed)<br>
+              • <strong>Deliberate Denormalization:</strong> <code>audit_logs</code> stores user name/position snapshot to prevent historical evidence tampering if an officer is later deleted!
+            </div>
+          </div>
+
+          <!-- Card 4: Q4 -->
+          <div class="cut-card" style="padding: var(--space-md);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span class="stamp-clearance stamp-top-secret">Q4. Constraints & Transactions</span>
+              <span style="font-family: var(--font-mono); font-size: 10px; color: var(--color-error);">★ Extra Credit Test</span>
+            </div>
+            <h4 style="font-family: var(--font-display); font-size: 14px; margin-bottom: 6px;">Data Correctness & Atomic Rollback</h4>
+            <p style="font-size: 12px; color: var(--color-ink-2); line-height: 1.4; margin-bottom: 8px;">
+              Document Upload executes inside a single ACID block: [Document] + [Version] + [Hash-Chained AuditLog].
+            </p>
+            <div style="font-family: var(--font-mono); font-size: 11px; background: var(--color-paper-3); padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+              • Constraints: NOT NULL, UNIQUE (email, doc_number, hash), FOREIGN KEYs<br>
+              • Atomicity: If audit chaining fails, the document and version rollback<br>
+              • Concurrency: SQLite WAL Mode allows concurrent readers alongside writer<br>
+              • <strong>Extra Credit:</strong> Click button above to verify DB kernel rejecting duplicate keys!
+            </div>
+          </div>
+
+          <!-- Card 5: Q5 -->
+          <div class="cut-card" style="padding: var(--space-md);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span class="stamp-clearance stamp-secret">Q5. Indexing & 100x Scaling</span>
+              <span style="font-family: var(--font-mono); font-size: 10px; color: var(--color-muted);">B-Tree Indexes</span>
+            </div>
+            <h4 style="font-family: var(--font-display); font-size: 14px; margin-bottom: 6px;">Execution Plans & Scale Strategy</h4>
+            <p style="font-size: 12px; color: var(--color-ink-2); line-height: 1.4; margin-bottom: 8px;">
+              B-Tree index on <code>sha256_hash</code> provides $O(\log N)$ logarithmic verification instead of $O(N)$ full table scans.
+            </p>
+            <div style="font-family: var(--font-mono); font-size: 11px; background: var(--color-paper-3); padding: 8px; border-radius: 4px; margin-bottom: 8px;">
+              • Active Indexes: <code>sha256_hash</code>, <code>sequence_number</code>, <code>email</code>, <code>workspace_id</code><br>
+              • Rejected: <code>details_json</code> (write amplification) & booleans (low cardinality)<br>
+              • 100x Growth Plan: Range partitioning on audit_logs by year, read replicas for search queries, blob decoupling to S3/GCS.
+            </div>
+          </div>
+        </div>
+
+        <!-- Table Inventory & Live Data -->
+        <div style="margin-top: var(--space-md);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <h4 style="font-family: var(--font-display); font-size: 14px;">Relational Table Inventory</h4>
+            <span style="font-family: var(--font-mono); font-size: 11px; color: var(--color-muted);">11 Normalized Tables Active</span>
+          </div>
+          <div class="table-frame">
+            <table class="cobalt-table">
+              <thead>
+                <tr>
+                  <th>Table</th>
+                  <th>Rows</th>
+                  <th>Columns</th>
+                  <th>Primary Key</th>
+                  <th>Foreign Keys</th>
+                  <th>Indexes</th>
+                </tr>
+              </thead>
+              <tbody id="dbmsTableInventoryBody">
+                <tr><td colspan="6" style="text-align: center; color: var(--color-muted);">Loading database introspection...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
     </main>
