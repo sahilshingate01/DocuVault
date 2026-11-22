@@ -181,3 +181,4 @@ def test_document_archival_and_trash_lifecycle(client, setup_test_hierarchy):
     # Restore from Trash
     rest_res = client.post(f"/api/v1/documents/{doc_id}/restore-deleted", headers=headers_sp)
     assert rest_res.status_code == 200
+

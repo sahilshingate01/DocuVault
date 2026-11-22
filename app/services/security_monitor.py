@@ -84,3 +84,4 @@ class SecurityMonitorService:
                 })
 
         return sorted(alerts, key=lambda x: (x["severity"] == "CRITICAL", x["severity"] == "HIGH", x["timestamp"]), reverse=True)
+

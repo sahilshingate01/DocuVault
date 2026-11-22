@@ -171,3 +171,4 @@ def delete_organization(
     )
 
     return {"message": f"Organization '{org.name}' deactivated successfully."}
+

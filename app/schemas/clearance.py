@@ -28,3 +28,4 @@ class TemporaryClearanceResponse(BaseModel):
     revoked_at: Optional[datetime] = None
     revocation_reason: Optional[str] = None
     created_at: datetime
+

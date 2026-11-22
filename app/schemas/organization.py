@@ -36,3 +36,4 @@ class OrganizationResponse(OrganizationBase):
     department_count: int = 0
     user_count: int = 0
     workspace_count: int = 0
+

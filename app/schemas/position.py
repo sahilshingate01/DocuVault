@@ -45,3 +45,4 @@ class PositionResponse(PositionBase):
     created_at: datetime
     updated_at: datetime
     user_count: int = 0
+

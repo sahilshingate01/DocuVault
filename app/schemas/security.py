@@ -40,3 +40,4 @@ class UserPermissionMatrix(BaseModel):
     can_manage_users: bool
     allowed_actions: List[str]
     permitted_classifications: List[str]
+

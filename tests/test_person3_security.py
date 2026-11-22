@@ -150,3 +150,4 @@ def test_security_dashboard_and_alerts(client, setup_test_hierarchy):
     alert_res = client.get("/api/v1/security/alerts", headers=headers_sp)
     assert alert_res.status_code == 200
     assert "active_alerts_count" in alert_res.json()
+

@@ -172,3 +172,4 @@ def delete_department(
     )
 
     return {"message": f"Department '{dept.name}' deactivated successfully."}
+

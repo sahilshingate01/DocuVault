@@ -187,3 +187,4 @@ def delete_position(
     )
 
     return {"message": f"Position '{pos.title}' deactivated successfully."}
+

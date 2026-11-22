@@ -130,3 +130,4 @@ def revoke_temporary_clearance(
     )
 
     return grant
+

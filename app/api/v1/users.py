@@ -286,3 +286,4 @@ def deactivate_user(
     )
 
     return {"message": f"User '{user.full_name}' deactivated successfully."}
+

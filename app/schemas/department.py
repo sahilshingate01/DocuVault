@@ -31,3 +31,4 @@ class DepartmentResponse(DepartmentBase):
     updated_at: datetime
     position_count: int = 0
     user_count: int = 0
+
