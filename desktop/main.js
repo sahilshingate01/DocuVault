@@ -109,6 +109,7 @@ function createWindow() {
     minHeight: 700,
     backgroundColor: '#0b0f19',
     title: 'DocuVault - Secure Document Management System',
+    icon: path.join(__dirname, 'assets', 'icon.svg'),
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     trafficLightPosition: { x: 18, y: 16 },
     webPreferences: {
