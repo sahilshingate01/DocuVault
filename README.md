@@ -64,6 +64,37 @@ In critical environments such as police departments and judicial courts, an alte
 
 ---
 
+## 🖥️ Native Desktop Application
+
+DocuVault features a fully working, native desktop application (powered by Electron) that integrates directly with the backend platform, local filesystem, and cryptographic subsystems.
+
+### Key Desktop Features
+- **Auto Backend Management**: The desktop client checks if the DocuVault server is running; if not, it automatically spawns and monitors the FastAPI backend process and terminates it cleanly upon exit.
+- **Offline / Local File Integrity Verifier**: Drag and drop any file from your local computer (or press `⌘O`) to calculate its SHA-256 fingerprint on-the-fly and verify whether it matches a registered vault record or has been tampered with.
+- **DigiLocker Digital Signature Studio**: One-click RSA-PSS digital signing for authorized positions (Superintendent of Police, District Judge, CEO) and signature verification.
+- **Tamper-Evident Ledger Explorer**: Real-time hash-chain visualization, one-click mathematical integrity audits (`⌘L`), tamper simulation, and JSON export.
+- **Native Keyboard Shortcuts**:
+  - `⌘U` / `Ctrl+U`: Secure document upload
+  - `⌘N` / `Ctrl+N`: Create secure workspace
+  - `⌘O` / `Ctrl+O`: Local file integrity verifier
+  - `⌘L` / `Ctrl+L`: Verify cryptographic audit ledger
+  - `⌘R` / `Ctrl+R`: Refresh vault state
+
+### Launching the Desktop Application
+```bash
+# Option 1: Using the automated launcher script (verifies dependencies and seeds DB if needed)
+./run_desktop.sh
+
+# Option 2: Using npm from project root
+npm run desktop
+
+# Option 3: Starting backend and desktop separately
+PYTHONPATH=. venv/bin/python3 app/main.py  # Terminal 1
+cd desktop && npm start                   # Terminal 2
+```
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
