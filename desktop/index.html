@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocuVault - Secure Document Management System</title>
+  <link rel="stylesheet" href="styles/desktop.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="platform-darwin">
+
+  <!-- Desktop Custom Window Titlebar (Integrated with macOS Traffic Lights) -->
+  <header class="desktop-titlebar">
+    <div class="titlebar-left">
+      <div class="titlebar-brand">
+        <span class="shield-icon">🛡️</span>
+        <span>Docu<span class="highlight">Vault</span></span>
+        <span class="badge-desktop-native">Desktop Client</span>
+      </div>
+    </div>
+
+    <div class="titlebar-center">
+      <!-- Live Backend Server Health Pill -->
+      <div id="serverStatusPill" class="server-status-pill" title="Click to test backend connection or restart">
+        <span id="serverStatusDot" class="status-dot"></span>
+        <span id="serverStatusText">127.0.0.1:8000</span>
+      </div>
+
+      <!-- Active Persona Switcher -->
+      <div class="persona-selector-wrap">
+        <label for="personaSelect">Persona:</label>
+        <select id="personaSelect" class="persona-dropdown">
+          <option value="sp">👮‍♂️ SP Vikram Sharma (Superintendent of Police | TOP SECRET)</option>
+          <option value="si">👮 Sub-Inspector Arjun Das (Investigator | CONFIDENTIAL)</option>
+          <option value="judge">⚖️ Hon. Judge Sneha Kulkarni (District Judge | TOP SECRET)</option>
+          <option value="clerk">📜 Manoj Verma (Court Record Clerk | RESTRICTED)</option>
+          <option value="ceo">💼 Siddharth Singhania (CEO - Apex Corp | TOP SECRET)</option>
+          <option value="analyst">📊 Riya Sen (Junior Analyst | UNCLASSIFIED)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="titlebar-right">
+      <div id="userBadge" class="user-profile-badge">
+        <span id="activeUserName" class="user-profile-name">SP Vikram Sharma</span>
+        <span id="activeUserClearance" class="badge-tier badge-top-secret">TOP SECRET</span>
+      </div>
+      <button id="btnQuickUpload" class="btn-desk btn-desk-primary" style="padding: 4px 10px; font-size: 12px;">+ Upload (⌘U)</button>
+    </div>
+  </header>
+
+  <!-- Desktop Main Body -->
+  <div class="desktop-body">
+    <!-- Sidebar Navigation -->
+    <aside class="desktop-sidebar">
+      <div>
+        <div class="nav-section-title">Vault Navigation</div>
+        <nav class="nav-buttons-list">
+          <button class="nav-btn active" data-pane="workspaces">
+            <span class="nav-icon">📁</span> Workspaces & Cases
+          </button>
+          <button class="nav-btn" data-pane="documents">
+            <span class="nav-icon">📄</span> Document Vault
+          </button>
+          <button class="nav-btn" data-pane="verifier">
+            <span class="nav-icon">🛡️</span> Local SHA-256 Verifier
+          </button>
+          <button class="nav-btn" data-pane="signatures">
+            <span class="nav-icon">✍️</span> Digital Signatures
+          </button>
+          <button class="nav-btn" data-pane="audit">
+            <span class="nav-icon">🔗</span> Audit Ledger
+          </button>
+          <button class="nav-btn" data-pane="search">
+            <span class="nav-icon">🔍</span> Clearance Search
+          </button>
+          <button class="nav-btn" data-pane="organizations">
+            <span class="nav-icon">🏛️</span> Orgs & Positions
+          </button>
+          <button class="nav-btn" data-pane="security">
+            <span class="nav-icon">🛡️</span> ABAC & Security SOC
+          </button>
+        </nav>
+      </div>
+
+      <!-- Bottom Cryptographic Ledger Telemetry -->
+      <div class="sidebar-crypto-card">
+        <div class="crypto-card-title">Vault Cryptography</div>
+        <div class="crypto-stat-row">
+          <span class="stat-label">Fingerprint:</span>
+          <span class="stat-val">SHA-256</span>
+        </div>
+        <div class="crypto-stat-row">
+          <span class="stat-label">Signatures:</span>
+          <span class="stat-val">RSA-PSS-2048</span>
+        </div>
+        <div class="crypto-stat-row">
+          <span class="stat-label">Ledger:</span>
+          <span class="stat-val">Hash-Chained</span>
+        </div>
+        <div id="sidebarLedgerBadge" class="chain-health-pill">● Chain Pristine</div>
+      </div>
+    </aside>
+
+    <!-- Canvas Views Area -->
+    <main class="desktop-canvas">
+
+      <!-- ===================================================================
+           Pane 1: Workspaces & Cases
+           =================================================================== -->
+      <section id="pane-workspaces" class="pane-view active">
+        <div class="pane-header-row">
+          <div>
+            <h1>Secure Workspaces & Cases</h1>
+            <p class="subtitle">Boundary-enforced multi-tenant workspaces for police cases, court records, and enterprise projects</p>
+          </div>
+          <div class="pane-actions-group">
+            <button id="btnNewWorkspace" class="btn-desk btn-desk-primary">+ New Case / Workspace</button>
+          </div>
+        </div>
+        <div id="workspacesGrid" class="cards-grid">
+          <!-- Populated by renderer -->
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           Pane 2: Document Vault
+           =================================================================== -->
+      <section id="pane-documents" class="pane-view">
+        <div class="pane-header-row">
+          <div>
+            <h1>Document Vault</h1>
+            <p class="subtitle">Immutable records with SHA-256 fingerprinting, version provenance, and clearance gates</p>
+          </div>
+          <div class="pane-actions-group">
+            <button id="btnOpenUploadModal" class="btn-desk btn-desk-primary">⬆️ Secure Upload (⌘U)</button>
+            <button id="btnRefreshDocs" class="btn-desk btn-desk-secondary">↻ Refresh (⌘R)</button>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="desk-table">
+            <thead>
+              <tr>
+                <th>Doc #</th>
+                <th>Title</th>
+                <th>Workspace</th>
+                <th>Classification</th>
+                <th>Status</th>
+                <th>Current SHA-256 Fingerprint</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="documentsTableBody">
+              <!-- Populated by renderer -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           Pane 3: Local File Integrity Verifier (Desktop Exclusive Tool)
+           =================================================================== -->
+      <section id="pane-verifier" class="pane-view">
+        <div class="pane-header-row">
+          <div>
+            <h1>Offline / Local File Integrity Verifier</h1>
+            <p class="subtitle">Verify whether any file on your computer has been altered or tampered with by checking against the cryptographic vault</p>
+          </div>
+        </div>
+
+        <div id="verifierDropzone" class="verifier-dropzone">
+          <div class="drop-icon">📂</div>
+          <div class="drop-title">Drag & drop any file here, or click to browse</div>
+          <div class="drop-desc">DocuVault will compute the SHA-256 checksum natively via desktop crypto and verify authenticity against registered records without modifying your file.</div>
+          <button id="btnSelectLocalFile" class="btn-desk btn-desk-primary" style="margin-top: 8px;">Select File from Computer (⌘O)</button>
+        </div>
+
+        <div id="verifierResultBox" class="verifier-result-box" style="display: none;">
+          <div class="verifier-header">
+            <div>
+              <h3 id="verFileName" style="font-size: 16px;">filename.pdf</h3>
+              <p id="verFilePath" style="font-size: 11px; color: var(--text-dim); margin-top: 2px;" class="selectable">/path/to/file</p>
+            </div>
+            <div id="verStatusBadge" class="verifier-status-badge verified">● Authentic Match</div>
+          </div>
+
+          <div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: 8px; font-size: 12px; display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-dim);">File Size:</span>
+              <span id="verFileSize" style="font-weight: 600;">12.4 KB</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="color: var(--text-dim);">Calculated SHA-256:</span>
+              <span id="verSha256" class="hash-cell selectable" style="max-width: 500px;"></span>
+            </div>
+          </div>
+
+          <div id="verDetailsBody"></div>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           Pane 4: Digital Signatures & Approvals
+           =================================================================== -->
+      <section id="pane-signatures" class="pane-view">
+        <div class="pane-header-row">
+          <div>
+            <h1>Digital Signatures & Approvals</h1>
+            <p class="subtitle">DigiLocker-grade asymmetric RSA-PSS cryptographic non-repudiation for authorized officials</p>
+          </div>
+        </div>
+
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px;">
+          <h3 style="font-size: 14px; color: #93c5fd; margin-bottom: 6px;">Legal Authorization Rule</h3>
+          <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+            Only designated authorized positions (such as <strong>Superintendent of Police</strong>, <strong>District Judge</strong>, or <strong>Chief Executive Officer</strong>) hold cryptographic signing authority over approved document versions.
+          </p>
+        </div>
+
+        <div id="signaturesListContainer" class="cards-grid">
+          <!-- Populated by renderer -->
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           Pane 5: Tamper-Evident Cryptographic Ledger
+           =================================================================== -->
+      <section id="pane-audit" class="pane-view">
+        <div class="pane-header-row">
+          <div>
+            <h1>Tamper-Evident Cryptographic Audit Ledger</h1>
+            <p class="subtitle">Mathematically linked hash-chained event blocks where EntryHash[n] = SHA-256(EntryHash[n-1] || Event)</p>
+          </div>
+          <div class="pane-actions-group">
+            <button id="btnVerifyChain" class="btn-desk btn-desk-success">✓ Verify Ledger Integrity (⌘L)</button>
+            <button id="btnSimulateTamper" class="btn-desk btn-desk-warning">⚠️ Simulate Tampering</button>
+            <button id="btnRestoreChain" class="btn-desk btn-desk-secondary">↺ Restore Ledger</button>
+            <button id="btnExportLedger" class="btn-desk btn-desk-secondary">⤓ Export Ledger</button>
+          </div>
+        </div>
+
+        <div id="ledgerVerificationBanner" style="display: none; padding: 14px 18px; border-radius: 8px; font-size: 13px; font-weight: 600;"></div>
+
+        <div class="table-wrapper">
+          <table class="desk-table">
+            <thead>
+              <tr>
+                <th>Block #</th>
+                <th>Timestamp</th>
+                <th>Actor</th>
+                <th>Action</th>
+                <th>Previous Hash</th>
+                <th>Entry Hash (SHA-256)</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="auditLedgerTableBody">
+              <!-- Populated by renderer -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           Pane 6: Clearance-Aware Search
+           =================================================================== -->
+      <section id="pane-search" class="pane-view">
+        <div class="pane-header-row">
+          <div>
+            <h1>Clearance-Aware Search</h1>
+            <p class="subtitle">Indexed document retrieval with automated security clearance filtering and redaction</p>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <input type="text" id="vaultSearchInput" class="desk-input" placeholder="Search by case title, tags (e.g. ballistics), or exact SHA-256 hash..." style="flex: 1; padding: 10px 14px; font-size: 14px;">
+          <button id="btnExecuteSearch" class="btn-desk btn-desk-primary">Search Vault</button>
+        </div>
+
+        <div id="searchResultsMeta" style="font-size: 12px; color: var(--text-dim);"></div>
+        <div id="searchResultsGrid" class="cards-grid"></div>
+      </section>
+
+      <!-- ===================================================================
+           Pane 7: Organizations & Positions
+           =================================================================== -->
+      <section id="pane-organizations" class="pane-view">
+        <div class="pane-header-row">
+          <div>
+            <h1>Organizations, Departments & Designations</h1>
+            <p class="subtitle">Multi-tenant hierarchy, position classifications, and Role-Based Access Control</p>
+          </div>
+        </div>
+        <div id="orgsHierarchyContainer" class="cards-grid">
+          <!-- Populated by renderer -->
+        </div>
+      </section>
+
+      <!-- ===================================================================
+           Pane 8: ABAC Policy Simulator & Security SOC
+           =================================================================== -->
+      <section id="pane-security" class="pane-view">
+        <div class="pane-header-row">
+          <div>
+            <h1>ABAC Authorization Engine & Security SOC</h1>
+            <p class="subtitle">Multi-attribute dynamic policy evaluator, Bell-LaPadula clearance compliance, and real-time security alerts</p>
+          </div>
+        </div>
+
+        <div id="socMetricsGrid" class="cards-grid">
+          <!-- Populated by renderer -->
+        </div>
+
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 14px;">
+          <h3 style="font-size: 15px; color: #93c5fd;">Pre-Flight ABAC Policy Simulator</h3>
+          <p style="font-size: 12px; color: var(--text-muted);">
+            Test authorization rules in real-time. The engine checks: <strong>Subject Clearance ≥ Resource Classification</strong> (no-read-up), <strong>Subject Position Permissions</strong>, and <strong>Department Boundaries</strong>.
+          </p>
+
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <select id="abacActionSelect" class="desk-select" style="min-width: 140px;">
+              <option value="READ">Action: READ</option>
+              <option value="WRITE">Action: WRITE</option>
+              <option value="UPDATE">Action: UPDATE</option>
+              <option value="DELETE">Action: DELETE</option>
+              <option value="DOWNLOAD">Action: DOWNLOAD</option>
+              <option value="APPROVE">Action: APPROVE</option>
+              <option value="SIGN">Action: SIGN</option>
+            </select>
+            <select id="abacResourceTypeSelect" class="desk-select" style="min-width: 150px;">
+              <option value="DOCUMENT">Resource: DOCUMENT</option>
+              <option value="WORKSPACE">Resource: WORKSPACE</option>
+            </select>
+            <input type="text" id="abacResourceIdInput" class="desk-input" placeholder="Resource UUID (optional)" style="flex: 1; min-width: 220px;">
+            <button id="btnEvaluateAbac" class="btn-desk btn-desk-primary">Evaluate ABAC Policy</button>
+          </div>
+
+          <div id="abacEvaluationResult" style="margin-top: 6px;"></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ===================================================================
+       Modal 1: Secure Document Upload
+       =================================================================== -->
+  <div id="modalUpload" class="desk-modal-backdrop">
+    <div class="desk-modal-card">
+      <div class="desk-modal-header">
+        <h3>Secure Document Upload</h3>
+        <button class="btn-desk close-modal" style="background: transparent; color: var(--text-muted); font-size: 16px;">✕</button>
+      </div>
+      <form id="formUploadDoc">
+        <div class="desk-modal-body">
+          <div class="desk-form-group">
+            <label>Document Title</label>
+            <input type="text" id="inputDocTitle" required class="desk-input" placeholder="e.g., Forensic Ballistics Investigation Report">
+          </div>
+          <div class="desk-form-group">
+            <label>Document Reference / Code</label>
+            <input type="text" id="inputDocNumber" required class="desk-input" placeholder="e.g., FIR-402-BALLISTICS-01">
+          </div>
+          <div class="desk-form-group">
+            <label>Target Workspace / Case</label>
+            <select id="selectDocWorkspace" required class="desk-select"></select>
+          </div>
+          <div class="desk-form-group">
+            <label>Security Classification Level</label>
+            <select id="selectDocClassification" class="desk-select">
+              <option value="UNCLASSIFIED">UNCLASSIFIED (Public Domain)</option>
+              <option value="RESTRICTED">RESTRICTED (Official Departmental Use)</option>
+              <option value="CONFIDENTIAL">CONFIDENTIAL (Privileged Access)</option>
+              <option value="SECRET">SECRET (High Sensitivity Investigation)</option>
+              <option value="TOP_SECRET">TOP_SECRET (Highest State / Judicial Clearance)</option>
+            </select>
+          </div>
+          <div class="desk-form-group">
+            <label>Select Document File</label>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button type="button" id="btnPickNativeFile" class="btn-desk btn-desk-secondary">Choose File...</button>
+              <span id="selectedFileName" style="font-size: 12px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 320px;">No file chosen</span>
+            </div>
+            <div id="uploadFileShaPreview" style="font-size: 11px; font-family: var(--font-mono); color: #93c5fd; margin-top: 4px; display: none;"></div>
+          </div>
+        </div>
+        <div class="desk-modal-footer">
+          <button type="button" class="btn-desk btn-desk-secondary close-modal">Cancel</button>
+          <button type="submit" id="btnSubmitUpload" class="btn-desk btn-desk-primary">Fingerprint & Upload</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       Modal 2: Create Workspace / Case
+       =================================================================== -->
+  <div id="modalWorkspace" class="desk-modal-backdrop">
+    <div class="desk-modal-card">
+      <div class="desk-modal-header">
+        <h3>Create Secure Workspace / Case</h3>
+        <button class="btn-desk close-modal" style="background: transparent; color: var(--text-muted); font-size: 16px;">✕</button>
+      </div>
+      <form id="formCreateWorkspace">
+        <div class="desk-modal-body">
+          <div class="desk-form-group">
+            <label>Case / Workspace Name</label>
+            <input type="text" id="inputWsName" required class="desk-input" placeholder="e.g., State vs. Malgudi Case Diary">
+          </div>
+          <div class="desk-form-group">
+            <label>Unique Case Code</label>
+            <input type="text" id="inputWsCode" required class="desk-input" placeholder="e.g., CASE-2026-CR-0402">
+          </div>
+          <div class="desk-form-group">
+            <label>Classification Level</label>
+            <select id="selectWsClassification" class="desk-select">
+              <option value="UNCLASSIFIED">UNCLASSIFIED</option>
+              <option value="RESTRICTED">RESTRICTED</option>
+              <option value="CONFIDENTIAL">CONFIDENTIAL</option>
+              <option value="SECRET">SECRET</option>
+              <option value="TOP_SECRET">TOP_SECRET</option>
+            </select>
+          </div>
+        </div>
+        <div class="desk-modal-footer">
+          <button type="button" class="btn-desk btn-desk-secondary close-modal">Cancel</button>
+          <button type="submit" class="btn-desk btn-desk-primary">Create Workspace</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Desktop Renderer Script -->
+  <script src="renderer.js"></script>
+</body>
+</html>
