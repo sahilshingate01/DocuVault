@@ -20,6 +20,8 @@ from app.services.audit_service import AuditService
 router = APIRouter(prefix="/audit", tags=["Audit Ledger"])
 
 
+@router.get("", response_model=List[AuditLogResponse])
+@router.get("/", response_model=List[AuditLogResponse])
 @router.get("/logs", response_model=List[AuditLogResponse])
 def get_audit_logs(
     action: Optional[str] = Query(None, description="Filter by action (e.g. READ, WRITE, SIGN, ACCESS_DENIED)"),
@@ -193,6 +195,7 @@ def verify_audit_ledger(
     return AuditIntegrityResponse(**result)
 
 
+@router.post("/simulate-tamper", response_model=AuditIntegrityResponse)
 @router.post("/simulate-tampering", response_model=AuditIntegrityResponse)
 def simulate_ledger_tampering(
     sequence_number: Optional[int] = Query(None, description="Sequence number to tamper with"),
@@ -223,14 +226,15 @@ def simulate_ledger_tampering(
     return AuditIntegrityResponse(**result)
 
 
+@router.post("/restore", response_model=AuditIntegrityResponse)
 @router.post("/recalculate-ledger", response_model=AuditIntegrityResponse)
 def recalculate_ledger(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Restores the hash chain following an authorized integrity audit."""
-    if not current_user.is_admin:
-        raise HTTPException(status_code=403, detail="Administrator privileges required.")
+    if not current_user.is_admin and (not current_user.position or not current_user.position.can_approve):
+        raise HTTPException(status_code=403, detail="Administrator or executive privileges required.")
 
     logs = db.query(AuditLog).order_by(AuditLog.sequence_number.asc()).all()
     prev_hash = "0" * 64
