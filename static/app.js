@@ -205,11 +205,19 @@ async function loadWorkspaces() {
 // --- TAB 2: DOCUMENTS ---
 async function loadDocuments() {
     documentsTableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Loading fingerprinted documents...</td></tr>`;
-    const resp = await apiFetch("/api/v1/search");
-    if (!resp.ok) return;
-
-    const data = await resp.json();
-    const docs = data.results || [];
+    let resp = await apiFetch("/api/v1/documents");
+    let docs = [];
+    if (resp.ok) {
+        docs = await resp.json();
+    } else {
+        resp = await apiFetch("/api/v1/search");
+        if (resp.ok) {
+            const data = await resp.json();
+            docs = data.results || [];
+        } else {
+            return;
+        }
+    }
     documentsTableBody.innerHTML = "";
 
     if (docs.length === 0) {
@@ -664,6 +672,11 @@ if (btnRunAbacEval) {
             </div>
         `;
     });
+}
+
+// Initialize ASCII stream canvas
+if (typeof window.initCobaltField === "function") {
+    window.initCobaltField("cobaltFieldCanvas");
 }
 
 // Initialize with Superintendent of Police persona
