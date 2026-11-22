@@ -182,3 +182,8 @@ def test_document_archival_and_trash_lifecycle(client, setup_test_hierarchy):
     rest_res = client.post(f"/api/v1/documents/{doc_id}/restore-deleted", headers=headers_sp)
     assert rest_res.status_code == 200
 
+    # Verify document listing endpoint returns the restored document
+    list_res = client.get("/api/v1/documents", headers=headers_sp)
+    assert list_res.status_code == 200
+    assert any(d["id"] == doc_id for d in list_res.json())
+
