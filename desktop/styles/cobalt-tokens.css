@@ -1,0 +1,120 @@
+/* ==========================================================================
+   DocuVault - Cobalt Design System Tokens
+   Source: Hallmark Cobalt Theme (Technical, Exact, Restrained)
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* Spacing Scale */
+  --space-3xs: 2px;
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+  --space-2xl: 64px;
+  --space-3xl: 96px;
+
+  /* Typography Scale */
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5625rem;
+  --text-2xl: 1.953rem;
+  --text-3xl: 2.441rem;
+
+  /* Fonts */
+  --font-display: "Familjen Grotesk", system-ui, -apple-system, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  --tracking-display: -0.028em;
+  --display-weight: 600;
+
+  /* Transitions */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+
+  /* Core Cobalt Palette */
+  --color-paper: oklch(98.6% 0.005 250);
+  --color-paper-2: oklch(96.2% 0.008 252);
+  --color-paper-3: oklch(93% 0.011 252);
+  --color-paper-tray: oklch(91% 0.012 252);
+
+  --color-ink: oklch(21% 0.028 262);
+  --color-ink-2: oklch(36% 0.022 260);
+  --color-muted: oklch(50% 0.018 258);
+
+  --color-rule: oklch(90% 0.009 252);
+  --color-rule-2: oklch(83% 0.012 252);
+
+  /* Graphite Dark Material (for code, terminal, crypto proofs) */
+  --color-graphite-0: oklch(18% 0.022 262);
+  --color-graphite: oklch(21% 0.024 262);
+  --color-graphite-2: oklch(26.5% 0.026 262);
+  --color-graphite-3: oklch(31% 0.028 262);
+  --color-graphite-ink: oklch(93% 0.010 250);
+  --color-graphite-muted: oklch(69% 0.022 256);
+
+  /* Electric Cobalt Accent */
+  --color-accent: oklch(52% 0.19 258);
+  --color-accent-hover: oklch(48% 0.19 259);
+  --color-accent-deep: oklch(43% 0.2 262);
+  --color-accent-edge: oklch(39% 0.16 260);
+  --color-accent-2: oklch(76% 0.13 254);
+  --color-accent-wash: oklch(95% 0.028 256);
+  --color-accent-ink: oklch(98.6% 0.005 250);
+  --color-focus: oklch(52% 0.19 258);
+
+  /* Functional Status Colors */
+  --color-error: oklch(52% 0.19 27);
+  --color-error-wash: oklch(96% 0.03 27);
+  --color-success: oklch(50% 0.12 150);
+  --color-success-wash: oklch(96% 0.03 150);
+  --color-warn: oklch(65% 0.15 65);
+  --color-warn-wash: oklch(96% 0.04 65);
+
+  /* ASCII Field Glyph Tints (Character Cell 8x16) */
+  --cell-w: 8px;
+  --cell-h: 16px;
+  --color-glyph-1: oklch(89% 0.025 254);
+  --color-glyph-2: oklch(81% 0.045 255);
+  --color-glyph-3: oklch(70% 0.085 256);
+  --color-glyph-4: oklch(60% 0.13 257);
+
+  /* Cut Corners & Radii */
+  --cut: 8px;
+  --cut-l: 16px;
+  --radius-card: 8px;
+  --radius-input: 6px;
+  --radius-pill: 999px;
+  --rule-hair: 1px;
+
+  /* Keycaps Shadows (3D Tactile Edges) */
+  --color-key-face: oklch(99.4% 0.003 250);
+  --color-key-edge: oklch(80% 0.016 254);
+  --color-key-hi: oklch(100% 0 0 / 0.9);
+  --color-key-drop: oklch(21% 0.028 262 / 0.28);
+  --color-key-press: oklch(21% 0.028 262 / 0.14);
+
+  --color-key-hi-on-accent: oklch(100% 0 0 / 0.22);
+  --color-key-drop-accent: oklch(30% 0.12 260 / 0.45);
+  --color-key-press-accent: oklch(21% 0.1 262 / 0.32);
+
+  --shadow-key: 0 3px 0 0 var(--color-key-edge), 0 6px 8px -4px var(--color-key-drop), inset 0 1px 0 var(--color-key-hi);
+  --shadow-key-hover: 0 4px 0 0 var(--color-key-edge), 0 8px 10px -5px var(--color-key-drop), inset 0 1px 0 var(--color-key-hi);
+  --shadow-key-press: 0 0 0 0 var(--color-key-edge), 0 1px 2px -1px var(--color-key-drop), inset 0 1px 2px var(--color-key-press);
+
+  --shadow-key-accent: 0 3px 0 0 var(--color-accent-edge), 0 6px 8px -4px var(--color-key-drop-accent), inset 0 1px 0 var(--color-key-hi-on-accent);
+  --shadow-key-accent-hover: 0 4px 0 0 var(--color-accent-edge), 0 8px 10px -5px var(--color-key-drop-accent), inset 0 1px 0 var(--color-key-hi-on-accent);
+  --shadow-key-accent-press: 0 0 0 0 var(--color-accent-edge), 0 1px 2px -1px var(--color-key-drop-accent), inset 0 1px 3px var(--color-key-press-accent);
+
+  --shadow-card: 0 1px 2px oklch(21% 0.028 262 / 0.06);
+  --shadow-panel: 0 1px 0 var(--color-rule), 0 18px 32px -24px oklch(21% 0.028 262 / 0.28);
+  --shadow-tray: inset 0 1px 3px oklch(21% 0.028 262 / 0.1);
+}
