@@ -24,6 +24,7 @@ from app.api.v1.search import router as search_router
 from app.api.v1.custody import router as custody_router
 from app.api.v1.certificates import router as certificates_router
 from app.api.v1.diff import router as diff_router
+from app.api.v1.dbms_viva import router as dbms_router
 
 # Ensure all database tables exist and are synchronized
 Base.metadata.create_all(bind=engine)
@@ -62,6 +63,7 @@ app.include_router(search_router, prefix=settings.API_V1_STR)
 app.include_router(custody_router, prefix=settings.API_V1_STR)
 app.include_router(certificates_router, prefix=settings.API_V1_STR)
 app.include_router(diff_router, prefix=settings.API_V1_STR)
+app.include_router(dbms_router, prefix=settings.API_V1_STR)
 
 # Mount Static Client Files
 static_dir = Path(__file__).resolve().parent.parent / "static"
